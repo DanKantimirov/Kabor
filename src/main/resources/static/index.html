@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<title>Forecasting of demand for one shop and one product</title>
+		<script src="js/jquery-3.1.1.js"></script>
+		<script src="js/jquery.validate.js"></script>
+		<script src="js/additional-methods.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-datepicker.js"></script>
+		<script src="locales/bootstrap-datepicker.ru.min.js"></script>
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/app.css">
+		
+		<script type="text/javascript">
+			jQuery().ready(function() {
+				$("#contactForm").show("slow");
+			});
+		</script>
+		
+		<script type="text/javascript">
+			function doAjax() {
+				$('#start-downloading-indicator').hide();
+				$('#start-analyzing-indicator').show();
+				$("#form-submit").hide();
+								
+				var inputWhsId=$("#whsInput").val();
+				var inputArtId=$("#artInput").val();
+				var startDay=$("#dateStartInput").val();
+				var finishDay=$("#dateEndInput").val();
+				var duration=$("#predictionDaysInput").val();
+				var predictMethod = $("#predictionMethod").val();
+				var useSmooth = $("#useSmoothInput").val();
+				
+				$.ajax({
+					url : 'forecastsingle',
+					timeout: 90000,
+					type: 'POST',
+					dataType: 'text',
+					contentType: 'application/json',
+					mimeType: 'application/json',
+									
+					data: JSON.stringify(
+						/*{
+							whsId:"2114",
+							artId:"49499",
+							trainingStart:"2016-10-01",
+							trainingEnd:"2016-12-30",
+							forecastDuration:"5",
+							forecastMethod:"WINTER_HOLT",
+							slopeType:"YES"
+						}*/
+						
+						{
+							whsId:inputWhsId,
+							artId:inputArtId,
+							trainingStart:startDay,
+							trainingEnd:finishDay,
+							forecastDuration:duration,
+							forecastMethod:predictMethod,
+							smoothType:useSmooth
+						}
+						
+						),
+					
+					success: function (data) {
+						$('#start-analyzing-indicator').hide();
+						$('#download-button').click(function(){
+							window.location.href='/demand/report/'+data;
+						})
+						
+						$("#form-submit").show();
+						$('#start-downloading-indicator').show();
+					},
+					
+					error: function(xhr, status, error) {
+						$('#start-downloading-indicator').hide();
+						$('#start-analyzing-indicator').hide();
+						$("#form-submit").show();
+						if(status==="timeout") {
+							alert("Таймаут.Терадата тормозит");
+						} else {
+							alert(xhr.responseText);
+						}
+					}
+				});
+			}
+			
+		</script>
+	</head>
+	
+	<body>
+	
+	<!-- Navbar -->
+    <nav class="navbar navbar-default" id='mynavbar'>
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">Forecasting of demand</a>
+        </div>
+    
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-2">
+          <ul class="nav navbar-nav navbar-left">
+            <li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="index.html">One-One</a></li>
+            <li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="multiple.html">Many-Many</a></li>
+			<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="excelMode.html">From Excel</a></li>
+          </ul>
+		  <ul class="nav navbar-nav navbar-right">
+			<li><button type="button col-md-4" class="btn btn-info pull-right navbar-btn" onclick="location.href='logout'">Log out</button></li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container -->
+    </nav><!-- /.navbar -->
+	
+	<div class="container-fluid">
+		
+		<form class="form-horizontal" id="contactForm"  onsubmit="doAjax();return false;">
+			<fieldset>
+				<!-- Form Name -->
+				<legend>Forecasting of demand for one shop and one product.</legend>
+
+				<!-- Text input-->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="whsInput">Id of shop</label>  
+				  <div class="col-md-4">
+				  <input id="whsInput" name="whsInput" class="form-control input-md" required="" type="number" data-bind="value:whsInput">
+				  <span class="help-block">Unique identifier of shop</span>  
+				  </div>
+				</div>
+
+				<!-- Text input-->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="artInput">Id of product</label>  
+				  <div class="col-md-4">
+				  <input id="artInput" name="artInput" class="form-control input-md" required="" type="number" data-bind="value:artInput">
+				  <span class="help-block">Unique identifier of product</span>  
+				  </div>
+				</div>
+
+				<!-- Text input-->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="dateStartInput">First date of analysis</label>  
+				  <div class="col-md-4">
+				 <input id="dateStartInput" name="dateStartInput" data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md" required="" type="text">
+				  <span class="help-block">First date of analysis</span>  
+				 </div>
+				</div>
+
+				<!-- Text input-->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="dateEndInput">First date of forecasting</label>  
+				  <div class="col-md-4">
+				  <input id="dateEndInput" name="dateEndInput"  data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md" required="" type="text">
+				  <span class="help-block">First date of forecasting and the last date of analysis</span>  
+				  </div>
+				</div>
+
+				<!-- Select Basic -->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
+				  <div class="col-md-4">
+					<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
+					  <option value="1">1</option>
+					  <option value="2">2</option>
+					  <option value="3">3</option>
+					  <option value="4">4</option>
+					  <option value="5">5</option>
+					  <option value="6">6</option>
+					  <option value="7">7</option>
+					  <option value="8">8</option>
+					  <option value="9">9</option>
+					  <option value="10">10</option>
+					  <option value="11">11</option>
+					  <option value="12">12</option>
+					  <option value="13">13</option>
+					  <option value="14">14</option>
+					</select>
+					<span class="help-block">Count days in forecast</span>  
+				  </div>
+				</div>
+				
+				<!-- Select Basic -->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
+				  <div class="col-md-4">
+					<select id="predictionMethod" name="predictionMethod" class="form-control">
+						<option value="ARIMA_2_0_0">ARIMA_2_0_0</option>
+						<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
+						<option value="WINTER_HOLT">WINTER_HOLT</option>
+					</select>
+					<span class="help-block">Method of demand forecasting</span> 
+				  </div>
+				</div>
+				
+				<!-- Select Basic -->
+				<div class="form-group">
+				  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
+				  <div class="col-md-4">
+					<select id="useSmoothInput" name="useSmoothInput" class="form-control">
+					  <option value="YES">30% of deviation</option>
+					  <option value="NO">None</option>
+					</select>
+					<span class="help-block">Method of deleting extremums</span>  
+				  </div>
+				</div>
+				
+				<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+
+				<!-- Button -->
+				<div class="form-group">
+				   <label class="col-md-4 control-label" for="sendButton"></label> 
+					<div class="col-md-4">
+						<button id="form-submit" type="submit"  class="btn btn-primary btn-lg pull-left ">Start</button>
+					</div>
+				</div>
+			</fieldset>
+		</form>
+
+	</div>
+	
+	<div class="container-fluid" id="start-analyzing-indicator" style="display:none">
+		<div class="alert alert-info">
+			<strong>Analyzing.</strong>It may take some time.
+		</div>
+		<img src="images/ajax-loader.gif" id="start-analyzing-indicator-image"  class="img-responsive center-block alert alert-success" alt="Анализ." />
+	</div>
+	
+	<div class="container-fluid" id="start-downloading-indicator" style="display:none">
+		<label class="col-md-4 control-label" for="download-button"></label> 
+		<div class="col-md-4">
+			<button id="download-button" type="button"  class="btn btn-success btn-lg pull-left ">Download result of forecasting</button>
+		</div>
+	</div>
+	
+	<div>
+		<p></p>
+	</div>
+	</body>
+</html>

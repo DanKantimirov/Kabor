@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<title>Forecasting of demand by Excel file</title>
+		<script src="js/jquery-3.1.1.js"></script>
+		<script src="js/jquery.validate.js"></script>
+		<script src="js/additional-methods.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-datepicker.js"></script>
+		<script src="locales/bootstrap-datepicker.ru.min.js"></script>
+		<link rel="stylesheet" href="css/bootstrap.min.css"></link>
+		<link rel="stylesheet" href="css/app.css"></link>
+		
+		
+		<script type="text/javascript">
+			jQuery().ready(function() {
+
+				$(".frm").hide("fast");
+				$("#formStep1").show("slow");
+				
+				//1->2
+				$(".open1").click(function() {
+					$("#sendExcelForm").validate()
+					if($("#sendExcelForm").valid()){
+						$(".frm").hide("fast");
+						$("#formStep2").show("slow");
+					}
+				});
+
+				//2->3
+				$(".open2").click(function() {
+					$("#sendExcelForm").validate()
+					if($("#sendExcelForm").valid()){
+						$(".frm").hide("fast");
+						$("#formStep3").show("slow");
+					}
+				});
+
+				//2->1
+				$(".back2").click(function() {
+					$(".frm").hide("fast");
+					$("#formStep1").show("slow");
+				});
+
+				//3->2
+				$(".back3").click(function() {
+					$(".frm").hide("fast");
+					$("#formStep2").show("slow");
+				});
+			});
+		</script>
+		
+	</head>
+	
+	<body>
+	
+		<div sec:authorize="isAnonymous()">
+			<div><p></p></div>
+				<div class="container-fluid">
+					<div class="alert alert-danger">It's possible that you are not logged in.</div>
+					<button type="button" class="btn btn-primary" onclick="location.href='index.html'">Login</button>
+				</div>
+		</div>
+	
+		<div sec:authorize="hasRole('USER')">
+			<!-- Navbar -->
+			<nav class="navbar navbar-default">
+			  <div class="container">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+				  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				  </button>
+				  <a class="navbar-brand" href="#">Forecasting of demand</a>
+				</div>
+			
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="navbar-collapse-2">
+				  <ul class="nav navbar-nav navbar-left">
+					<li class='my_link_button_2'><a class = 'btn btn-info my_link_button' id='my_link_button' href="index.html">One-One</a></li>
+					<li class='my_link_button_2'><a class = 'btn btn-info my_link_button' id='my_link_button' href="multiple.html">Many-Many</a></li>
+					<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="excelMode.html">From Excel</a></li>
+				  </ul>
+				  <ul class="nav navbar-nav navbar-right">
+					<li><button type="button col-md-4" class="btn btn-info pull-right navbar-btn" onclick="location.href='logout'">Log out</button></li>
+				  </ul>
+				</div><!-- /.navbar-collapse -->
+			  </div><!-- /.container -->
+			</nav><!-- /.navbar -->
+
+			<!-- Message from server -->
+			<div th:if="${message}">
+				<h2 th:text="${message}"/>
+			</div>
+			
+			<form name="sendExcelForm" id="sendExcelForm" class="form-horizontal" method="POST" enctype="multipart/form-data" action="/demand/excelMode">
+ 
+				<div id="formStep1" class="frm">
+					<legend>1.) Enter your Excel or CSV file</legend>
+					<fieldset>
+						<!-- fileInput --> 
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="fileInput">File to upload:</label>
+						  <div class="col-md-4">
+							<input id="fileInput" name="fileInput" class="input-file btn-info required" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"></input>
+							<span class="help-block">Excel or CSV file with sales statistic</span>
+						  </div>
+						</div>
+						<!-- 1->2 -->
+						<div class="form-group">
+						  <div class="col-lg-10 col-lg-offset-2">
+							<button class="btn btn-primary open1" type="button">Next <span class="fa fa-arrow-right"></span></button> 
+						  </div>
+						</div>
+					</fieldset>
+				</div>
+				 
+				<div id="formStep2" class="frm">
+					<legend>2.) Enter forecast parameters</legend>
+					<fieldset>
+						<!-- dateStartInput-->
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="dateStartInput">First date of analysis</label>  
+						  <div class="col-md-4">
+						 <input id="dateStartInput" name="dateStartInput" data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md required" type="text"></input>
+						  <span class="help-block">First date of analysis</span>  
+						 </div>
+						</div>
+						<!-- dateEndInput-->
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="dateEndInput">Start date of forecasting</label>  
+						  <div class="col-md-4">
+						  <input id="dateEndInput" name="dateEndInput"  data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md required" type="text"></input>
+						  <span class="help-block">First date of forecasting and the last date of analysis</span>
+						  </div>
+						</div>
+						<!-- predictionDaysInput -->
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
+						  <div class="col-md-4">
+							<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
+							  <option value="1">1</option>
+							  <option value="2">2</option>
+							  <option value="3">3</option>
+							  <option value="4">4</option>
+							  <option value="5">5</option>
+							  <option value="6">6</option>
+							  <option value="7">7</option>
+							  <option value="8">8</option>
+							  <option value="9">9</option>
+							  <option value="10">10</option>
+							  <option value="11">11</option>
+							  <option value="12">12</option>
+							  <option value="13">13</option>
+							  <option value="14">14</option>
+							</select>
+							<span class="help-block">Count days in forecast</span>  
+						  </div>
+						</div>
+						<!-- predictionMethod -->
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
+						  <div class="col-md-4">
+							<select id="predictionMethod" name="predictionMethod" class="form-control">
+								<option value="ARIMA_2_0_0">ARIMA_2_0_0</option>
+								<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
+								<option value="WINTER_HOLT">WINTER_HOLT</option>
+							</select>
+							<span class="help-block">Method of demand forecasting</span> 
+						  </div>
+						</div>
+						<!-- useSmoothInput -->
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
+						  <div class="col-md-4">
+							<select id="useSmoothInput" name="useSmoothInput" class="form-control">
+							  <option value="YES">30% of deviation</option>
+							  <option value="NO">None</option>
+							</select>
+							<span class="help-block">Method of deleting extremums</span>  
+						  </div>
+						</div>
+						<div class="clearfix" style="height: 10px;clear: both;"></div>
+						<!-- 2->3 and 2->1 -->
+						<div class="form-group">
+						  <div class="col-lg-10 col-lg-offset-2">
+							<button class="btn btn-warning back2" type="button"><span class="fa fa-arrow-left"></span> Back</button> 
+							<button class="btn btn-primary open2" type="button">Next <span class="fa fa-arrow-right"></span></button> 
+						  </div>
+						</div>
+					</fieldset>
+				</div>
+				<div id="formStep3" class="frm">
+					<legend>3.) Enter email for sending result of forecasting</legend>
+					<fieldset>
+					
+						<!-- inputEmail -->
+						<div class="form-group">
+						  <label class="col-md-4 control-label" for="inputEmail">Email: </label>  
+						  <div class="col-md-4">
+						  <input id="inputEmail" name="inputEmail" placeholder="somemail@yahoo.com" class="form-control input-md required" type="text"></input>
+						  <span class="help-block">Email for sending result of forecasting</span>  
+						  </div>
+						</div>
+
+						<!-- captcha -->
+						<div class="form-group">
+							<label class="col-md-4 control-label" for="singlebutton">Captcha</label>
+							<div class="col-md-4">
+								<script src="https://www.google.com/recaptcha/api.js" async="true" defer="true"></script>
+								<div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+							</div>
+						</div>
+						<!-- for preventing xss -->
+						<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"></input>
+						<!-- 3->2 -->
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<button class="btn btn-warning back3" type="button"><span class="fa fa-arrow-left"></span> Back</button> 
+								<input type="submit" value="Upload" class="btn btn-primary"></input>
+							</div>
+						</div>
+					</fieldset>
+				</div>
+			</form>
+			<!-- Downloaded files -->
+			<div>
+				<ul>
+					<li th:each="file : ${files}">
+						<a th:href="${file}" th:text="${file}" />
+					</li>
+				</ul>
+			</div>
+		
+		</div>
+
+	</body>
+</html>

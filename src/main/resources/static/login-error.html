@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+    <head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<title>Invalid login and password</title>
+		<script src="js/jquery-3.1.1.js"></script>
+		<script src="js/jquery.validate.js"></script>
+		<script src="js/additional-methods.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-datepicker.js"></script>
+		<script src="locales/bootstrap-datepicker.ru.min.js"></script>
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/app.css">
+    </head>
+    <body>
+		<div><p></p></div>
+		<div class="container-fluid">
+		<div class="alert alert-danger"><strong>Error!</strong>Invalid login and password.</div>
+		<button type="button" class="btn btn-primary" onclick="location.href='index.html'">Try again</button>
+		</div>
+    </body>
+</html>
