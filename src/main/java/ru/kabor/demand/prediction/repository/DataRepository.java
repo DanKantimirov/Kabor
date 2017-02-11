@@ -17,4 +17,6 @@ public interface DataRepository {
 	String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws Exception;
     /** Get available document for processing*/
     String getAvailableDocument();
+    String getEmailByRequestId(Long requestId);
+    String getResponseTextByRequestId(Long requestId);
 }

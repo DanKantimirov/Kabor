@@ -42,6 +42,12 @@
 		</dependency>
 		
 		<dependency>
+		    <groupId>org.springframework</groupId>
+		    <artifactId>spring-test</artifactId>
+		    <scope>test</scope>
+		</dependency>
+		
+		<dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
         </dependency>
@@ -94,7 +100,6 @@
 		    <artifactId>imgscalr-lib</artifactId>
 		    <version>4.2</version>
 		</dependency>
-    	
 		
 		<dependency>
     		<groupId>org.apache.commons</groupId>
@@ -128,6 +133,12 @@
 	    <groupId>org.thymeleaf.extras</groupId>
 	    <artifactId>thymeleaf-extras-springsecurity4</artifactId>
 	</dependency>
+	
+	<dependency>
+  		<groupId>javax.mail</groupId>
+  		<artifactId>mail</artifactId>
+  		<version>1.4.7</version>
+  	</dependency>
 	
 	</dependencies>
 

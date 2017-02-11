@@ -12,7 +12,7 @@ public class DataServiceException extends Exception {
 
 	@Override
 	public String toString() {
-		return "DataServiceException =" + errorMessage + "]";
+		return "DataServiceException =" + errorMessage;
 	}
 
 	public String getErrorMessage() {

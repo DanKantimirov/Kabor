@@ -369,4 +369,34 @@ public class DataRepositoryImplementation implements DataRepository{
 		//TODO: get available document
 		return "Dummy document";
 	}
+
+	/** Getting user email (v_request.email) by requestId*/
+	@Override
+	public String getEmailByRequestId(Long requestId) {
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("requestId", requestId);
+		String query = "select email from v_request where request_id=:requestId";
+		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer emailColumn =  rowSet.findColumn("email");
+		if(rowSet.next()){
+			return rowSet.getString(emailColumn);
+		}else{
+			return null;
+		}
+	}
+
+	/** Getting response to user (v_request.response_text) by requestId*/
+	@Override
+	public String getResponseTextByRequestId(Long requestId) {
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("requestId", requestId);
+		String query = "select response_text from v_request where request_id=:requestId";
+		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer responseTextColumn =  rowSet.findColumn("response_text");
+		if(rowSet.next()){
+			return rowSet.getString(responseTextColumn);
+		}else{
+			return null;
+		}
+	}
 }
