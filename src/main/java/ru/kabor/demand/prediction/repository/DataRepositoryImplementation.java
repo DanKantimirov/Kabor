@@ -3,6 +3,7 @@ package ru.kabor.demand.prediction.repository;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +14,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.naming.TimeLimitExceededException;
 import javax.transaction.Transactional;
 
@@ -26,7 +26,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
+import ru.kabor.demand.prediction.controller.ExcelModeControllerImpl;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
 import ru.kabor.demand.prediction.entity.ResponceForecast;
@@ -47,6 +49,12 @@ public class DataRepositoryImplementation implements DataRepository{
 	
     @Value("${storage.outputFolderLocation}")
     private String outputFolderLocation;
+
+    @Value("${serverUser.contextPath}")
+    private String contextPath;
+
+    @Value("${serverUser.port}")
+    private String port;
 	
 	@Autowired
 	private NamedParameterJdbcTemplate namedparameterJdbcTemplate;
@@ -54,12 +62,10 @@ public class DataRepositoryImplementation implements DataRepository{
 	@Autowired
 	private RUtils rUtils;
 	
-	private String fileSeparator = System.getProperty("file.separator");
+	@Value("${storage.inputFolderLocation}")
+	private Path inputFolderLocation; 
 	
-	@PostConstruct
-	public void initIt() throws Exception {
-		
-	}
+	private String fileSeparator = System.getProperty("file.separator");
 	
 	@Override
 	@Transactional
@@ -364,6 +370,7 @@ public class DataRepositoryImplementation implements DataRepository{
 	}
 	
 	@Override
+	@Transactional
 	/** Get Excel file name of untreated document*/
 	public String getAvailableDocument() {
 		//TODO: get available document
@@ -372,6 +379,7 @@ public class DataRepositoryImplementation implements DataRepository{
 
 	/** Getting user email (v_request.email) by requestId*/
 	@Override
+	@Transactional
 	public String getEmailByRequestId(Long requestId) {
 		Map<String, Object> namedParameters = new HashMap<>();
 		namedParameters.put("requestId", requestId);
@@ -387,6 +395,7 @@ public class DataRepositoryImplementation implements DataRepository{
 
 	/** Getting response to user (v_request.response_text) by requestId*/
 	@Override
+	@Transactional
 	public String getResponseTextByRequestId(Long requestId) {
 		Map<String, Object> namedParameters = new HashMap<>();
 		namedParameters.put("requestId", requestId);
@@ -398,5 +407,30 @@ public class DataRepositoryImplementation implements DataRepository{
 		}else{
 			return null;
 		}
+	}
+
+	@Override
+	@Transactional
+	/**
+	 * Getting link to attachment for user
+	 * (http://....v_request.attachment_path) by requestId
+	 */
+	public String getAttachmentPathByRequestId(Long requestId) {
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("requestId", requestId);
+		String query = "select attachment_path from v_request where request_id=:requestId";
+		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer responseTextColumn = rowSet.findColumn("attachment_path");
+		if (rowSet.next()) {
+			String attachmentName = rowSet.getString(responseTextColumn);
+			if (attachmentName != null && !attachmentName.trim().equals("")) {
+				String partOne = MvcUriComponentsBuilder.fromController(ExcelModeControllerImpl.class).port(port).build().toString();
+				String partTwo = MvcUriComponentsBuilder.fromMethodName(ExcelModeControllerImpl.class, "serveFileOutput", attachmentName).port(port).build().toString();
+				String result = partOne + contextPath+ "/" + partTwo.replace(partOne, "");
+				return result;
+			}
+			return null;
+		}
+		return null;
 	}
 }

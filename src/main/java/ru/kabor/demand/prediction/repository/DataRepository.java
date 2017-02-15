@@ -19,4 +19,5 @@ public interface DataRepository {
     String getAvailableDocument();
     String getEmailByRequestId(Long requestId);
     String getResponseTextByRequestId(Long requestId);
+    String getAttachmentPathByRequestId(Long requestId);
 }

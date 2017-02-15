@@ -28,16 +28,25 @@ public interface DataService {
     /** Put one file into storage folder
      * @throws DataServiceException*/
     void putFile(MultipartFile file) throws DataServiceException;
-    /** Get path for file in storage folder*/
-    Path getStorageFilePath(String filename);
-    /** Get path for all files in storage folder
+    /** Get path for file in input storage folder*/
+    Path getStorageInputFilePath(String filename);
+    /** Get path for file in output storage folder*/
+    Path getStorageOutputFilePath(String filename);
+    /** Get path for all files in input storage folder
      * @throws DataServiceException*/
-    Stream<Path> getStorageFilePathAll() throws DataServiceException;
-    /** Get file from storage as resource
+    Stream<Path> getStorageInputFilePathAll() throws DataServiceException;
+    /** Get path for all files in output storage folder
      * @throws DataServiceException*/
-    Resource getStorageFileAsResourse(String filename) throws DataServiceException;
+    Stream<Path> getStorageOutputFilePathAll() throws DataServiceException;
+    /** Get file from input storage as resource
+     * @throws DataServiceException*/
+    Resource getStorageInputFileAsResourse(String filename) throws DataServiceException;
+    /** Get file from output storage as resource
+     * @throws DataServiceException*/
+    Resource getStorageOutputFileAsResourse(String filename) throws DataServiceException;
     /** Deletes all files in storage*/
     void deleteAllFiles();
     /** Get available document for processing*/
     String getAvailableDocument();
+
 }

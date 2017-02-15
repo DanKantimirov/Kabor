@@ -22,11 +22,11 @@ public class EmailSenderTest {
 		assertTrue(true);
 	}
 	
-	//@Test
+	@Test
 	public void messageWithResult() {
 		try {
 			sender.sendMessageWithResult(11L);
-		} catch (MessagingException e) {
+		} catch (MessagingException|EmailSenderException e) {
 			assertTrue("Some exception:" + e.toString(), false);
 		}
 		assertTrue(true);
@@ -36,7 +36,7 @@ public class EmailSenderTest {
 	public void messageWithError() {
 		try {
 			sender.sendMessageWithError(11L);
-		} catch (MessagingException e) {
+		} catch (MessagingException|EmailSenderException e) {
 			assertTrue("Some exception:" + e.toString(), false);
 		}
 		assertTrue(true);
@@ -47,7 +47,7 @@ public class EmailSenderTest {
 	public void messageWithErrorAndBody() {
 		try {
 			sender.sendMessageWithError(11L, "Custom error");
-		} catch (MessagingException e) {
+		} catch (MessagingException|EmailSenderException e) {
 			assertTrue("Some exception:" + e.toString(), false);
 		}
 		assertTrue(true);
