@@ -200,48 +200,88 @@ public class DataServiceImplementation implements DataService {
         }
 	}
 
-	/** Get path for file in storage folder*/
+	/** Get path for file in input storage folder*/
 	@Override
-	public Path getStorageFilePath(String filename) {
+	public Path getStorageInputFilePath(String filename) {
 		 return this.inputFolderLocation.resolve(filename);
 	}
+	
+	/** Get path for file in output storage folder*/
+	@Override
+	public Path getStorageOutputFilePath(String filename) {
+		return this.outputFolderLocation.resolve(filename);
+	}
 
-    /** Get path for all files in storage folder
+	/** Get path for all files in input storage folder
      * @throws DataServiceException*/
 	@Override
-	public Stream<Path> getStorageFilePathAll() throws DataServiceException {
+	public Stream<Path> getStorageInputFilePathAll() throws DataServiceException {
 		try {
 			return Files
 						.walk(this.inputFolderLocation, 1)
 						.filter(path -> !path.equals(this.inputFolderLocation))
 						.map(path -> this.inputFolderLocation.relativize(path));
 		} catch (IOException e) {
-			LOG.error("Can't read stored files:" + e.toString());
-			throw new DataServiceException("Can't read stored files:" + e.toString());
+			LOG.error("Can't read input folder files:" + e.toString());
+			throw new DataServiceException("Can't read input folder files:" + e.toString());
+		}
+	}
+	
+	/** Get path for all files in output storage folder
+     * @throws DataServiceException*/
+	@Override
+	public Stream<Path> getStorageOutputFilePathAll() throws DataServiceException {
+		try {
+			return Files
+						.walk(this.outputFolderLocation, 1)
+						.filter(path -> !path.equals(this.outputFolderLocation))
+						.map(path -> this.outputFolderLocation.relativize(path));
+		} catch (IOException e) {
+			LOG.error("Can't read output folder files:" + e.toString());
+			throw new DataServiceException("Can't read output folder files:" + e.toString());
 		}
 	}
 
-    /** Get file from storage as resource
+	/** Get file from input storage as resource
      * @throws DataServiceException*/
 	@Override
-	public Resource getStorageFileAsResourse(String filename) throws DataServiceException {
+	public Resource getStorageInputFileAsResourse(String filename) throws DataServiceException {
         try {
-            Path file = getStorageFilePath(filename);
+            Path file = getStorageInputFilePath(filename);
             Resource resource = new UrlResource(file.toUri());
             if(resource.exists() || resource.isReadable()) {
                 return resource;
             }
             else {
-            	LOG.error("Can't read file: " + filename);
-                throw new DataServiceException("Can't read file: " + filename);
-
+            	LOG.error("Can't read file in input storage: " + filename);
+                throw new DataServiceException("Can't read file in input storage: " + filename);
             }
         } catch (MalformedURLException e) {
-        	LOG.error("Can't read file: " + filename);
-            throw new DataServiceException("Can't read file: " + filename + " " + e.toString());
+        	LOG.error("Can't read file in input storage: " + filename);
+            throw new DataServiceException("Can't read file in input storage: " + filename + " " + e.toString());
         }
 	}
-
+	
+	/** Get file from output storage as resource
+     * @throws DataServiceException*/
+	@Override
+	public Resource getStorageOutputFileAsResourse(String filename) throws DataServiceException {
+		  try {
+	            Path file = getStorageOutputFilePath(filename);
+	            Resource resource = new UrlResource(file.toUri());
+	            if(resource.exists() || resource.isReadable()) {
+	                return resource;
+	            }
+	            else {
+	            	LOG.error("Can't read file in output storage: " + filename);
+	                throw new DataServiceException("Can't read file in output storage: " + filename);
+	            }
+	        } catch (MalformedURLException e) {
+	        	LOG.error("Can't read file in output storage: " + filename);
+	            throw new DataServiceException("Can't read file in output storage: " + filename + " " + e.toString());
+	        }
+	}
+	
 	/** Deletes all files in storage*/
 	@Override
 	public void deleteAllFiles() {
@@ -253,4 +293,5 @@ public class DataServiceImplementation implements DataService {
 	public String getAvailableDocument() {
 		return dataRepository.getAvailableDocument();
 	}
+
 }

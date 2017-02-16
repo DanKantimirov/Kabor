@@ -44,7 +44,7 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     @GetMapping("/excelMode")
     public String listUploadedFiles(Model model) throws IOException, DataServiceException {
         model.addAttribute("files", dataService
-                .getStorageFilePathAll()
+                .getStorageInputFilePathAll()
                 .map(path ->
                         MvcUriComponentsBuilder
                                 .fromMethodName(ExcelModeControllerImpl.class, "serveFile", path.getFileName().toString())
@@ -53,12 +53,24 @@ public class ExcelModeControllerImpl implements ExcelModeController {
         return "uploadForm";
     }
     
-	/** Return file by path
+	/** Return file by path from input storage
 	 * @throws DataServiceException*/
     @GetMapping("excelMode/files/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) throws DataServiceException {
-        Resource file = dataService.getStorageFileAsResourse(filename);
+        Resource file = dataService.getStorageInputFileAsResourse(filename);
+        return ResponseEntity
+                .ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+file.getFilename()+"\"")
+                .body(file);
+    }
+    
+	/** Return file by path from output storage
+	 * @throws DataServiceException*/
+    @GetMapping("excelMode/filesOutput/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> serveFileOutput(@PathVariable String filename) throws DataServiceException {
+        Resource file = dataService.getStorageOutputFileAsResourse(filename);
         return ResponseEntity
                 .ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+file.getFilename()+"\"")
