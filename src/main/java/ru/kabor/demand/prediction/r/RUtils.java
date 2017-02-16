@@ -43,7 +43,7 @@ public class RUtils {
 		this.rConnectionPool.setPoolSettings(this.rInitialCountConnections, this.rMaxCountConnections, this.rAwaitIfBusyTimeoutMillisecond);
 		List<String> connectionOpenCommanList = new ArrayList<>();
 		connectionOpenCommanList.add("library('forecast')");
-		connectionOpenCommanList.add("library('GMDH')");
+		//connectionOpenCommanList.add("library('GMDH')");
 		this.rConnectionPool.setConnectionLifecycleCommands(connectionOpenCommanList, null, null);
 		this.rConnectionPool.attachToRserve();
 	}
@@ -195,7 +195,7 @@ public class RUtils {
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
-			connection.voidEval("mytimeforecast1 <- fcast(myts, method = 'GMDH', input = 3, layer = 2, f.number = "	+ forecastDuration + ", level = 95, tf = 'sigmoid')");
+			//connection.voidEval("mytimeforecast1 <- fcast(myts, method = 'GMDH', input = 3, layer = 2, f.number = "	+ forecastDuration + ", level = 95, tf = 'sigmoid')");
 			REXP f = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = f.asDoubles();
 

@@ -1,11 +1,6 @@
 package ru.kabor.demand.prediction.controller;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.stream.Collectors;
-
-import javax.servlet.http.HttpServletRequest;
-
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,29 +9,33 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import ru.kabor.demand.prediction.service.DataService;
 import ru.kabor.demand.prediction.service.DataServiceException;
+import ru.kabor.demand.prediction.service.RequestService;
 import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.VerifyCaptcha;
+import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.stream.Collectors;
 
 @Controller
 public class ExcelModeControllerImpl implements ExcelModeController {
 	
 	@Autowired
     private DataService dataService;
-	
+
+	@Autowired
+	RequestService requestService;
+
 	private static final Logger LOG = LoggerFactory.getLogger(ExcelModeControllerImpl.class);
 	
 	/** Return list of already downloaded files and redirect to form of adding new
@@ -80,6 +79,7 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     		@RequestParam("useSmoothInput") SMOOTH_TYPE smoothType,
     		@RequestParam("inputEmail") String email,
     		@RequestParam("g-recaptcha-response") String gRecaptchaResponse,
+			HttpServletRequest request,
     		RedirectAttributes redirectAttributes) throws DataServiceException, UnsupportedEncodingException, IOException {
     	
     	String testSecretKey = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
@@ -87,8 +87,22 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     	if(!verify){
     		throw new DataServiceException("Wrong captcha");
     	}
-        dataService.putFile(file);
-        redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename() + "!");
+		try {
+			requestService.processNewRequest(file, request.getParameterMap());
+
+			dataService.putFile(file);
+
+			redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename() + "!");
+
+		} catch (InvalidHeaderException exception) {
+			redirectAttributes.addFlashAttribute("message", "Your file format is invalid. Check file columns name.");
+		} catch (InvalidFormatException exception) {
+			redirectAttributes.addFlashAttribute("message", "Unable process your file. Perhaps it has been broken.");
+		}
+
+		// respond to user as quickly as possible.
+		// in html page
+
         return "redirect:/excelMode";
     }
 

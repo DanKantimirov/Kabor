@@ -1,34 +1,55 @@
 package ru.kabor.demand.prediction.utils;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import javax.imageio.ImageIO;
-
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellValue;
-import org.apache.poi.ss.usermodel.ClientAnchor;
-import org.apache.poi.ss.usermodel.Drawing;
-import org.apache.poi.ss.usermodel.FormulaEvaluator;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
+import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 
 public class ExcelUtils {
+
+	/** List for validating csv headers*/
+	public static List<String> validHeaders = new ArrayList<>();
+
+	static {
+		validHeaders.add(0, "id");
+		validHeaders.add(1, "whs_id");
+		validHeaders.add(2, "art_id");
+		validHeaders.add(3, "day_id");
+		validHeaders.add(4, "sale_qnty");
+		validHeaders.add(5, "rest_qnty");
+		validHeaders.add(6, "request_id");
+	}
+
+	/** Validation csv file headers
+	 *
+	 * @param workbook
+	 * @throws Exception
+     */
+	public static void validateCsvHeaders(Workbook workbook) throws InvalidHeaderException	{
+		Row headerRow = workbook.getSheetAt(0).getRow(0);
+		List<String> requestHeaders = new ArrayList<>();
+		for(int i=0; i<=validHeaders.size(); i++) {
+			requestHeaders.add(readValueFromXls(workbook, headerRow, i));
+		}
+
+		if (!validHeaders.equals(requestHeaders)) {
+			throw new InvalidHeaderException();
+		}
+	}
 
 	/** Find column in row with  by content*/
 	public static Integer findColumnNumberByContent(Workbook workbook, Sheet sheet, Integer rowNumber, String content) {
@@ -54,7 +75,7 @@ public class ExcelUtils {
 		return readValueFromXls(workbook, row, columnNumber, null);
 	}
 
-	/** Reading cell from Excel workbook */
+	/** Reading cell froxm Excel workbook */
 	@SuppressWarnings("deprecation")
 	public static String readValueFromXls(Workbook workbook, Row row, Integer columnNumber, SimpleDateFormat dateFormat) {
 		String cellValue = "";

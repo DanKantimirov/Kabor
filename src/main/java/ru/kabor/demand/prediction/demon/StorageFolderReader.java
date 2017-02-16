@@ -46,6 +46,11 @@ public class StorageFolderReader {
 					try {
 						System.out.println(this.dataService.getAvailableDocument());
 						System.out.println(("The time is now:" + dateFormat.format(new Date())));
+						// read v_request where status = 0;
+						// get just 1 request
+						// parse excel
+						// send param to R methods
+						// get result and make new Excel
 						//try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception TODO: decomment
 						try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
 					} catch (Exception e) {

@@ -60,7 +60,7 @@ public class JpaConfig implements TransactionManagementConfigurer{
 	        return new HikariDataSource(config);
 	    }
 
-	    @Bean
+	    @Bean(name = "entityManagerFactory")
 	    public LocalContainerEntityManagerFactoryBean configureEntityManagerFactory() {
 	        LocalContainerEntityManagerFactoryBean entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
 	        entityManagerFactoryBean.setDataSource(configureDataSource());

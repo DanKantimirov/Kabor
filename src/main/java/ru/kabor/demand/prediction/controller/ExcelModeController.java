@@ -1,17 +1,17 @@
 package ru.kabor.demand.prediction.controller;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
 import ru.kabor.demand.prediction.service.DataServiceException;
 import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 /** Controller for working when we take data(sales,rest) from Excel document*/
 public interface ExcelModeController {
@@ -32,6 +32,7 @@ public interface ExcelModeController {
 	 * @throws UnsupportedEncodingException 
 	 */
 	public String handleFileUpload(MultipartFile file, String trainingStart, String trainingEnd,
-			Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType,String gRecaptchaResponse,
-			String email, RedirectAttributes redirectAttributes) throws DataServiceException, UnsupportedEncodingException, IOException;
+		   Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType, String gRecaptchaResponse,
+		   String email, HttpServletRequest request, RedirectAttributes redirectAttributes)
+					throws DataServiceException, UnsupportedEncodingException, IOException;
 }
