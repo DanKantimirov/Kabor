@@ -1,4 +1,4 @@
-package ru.kabor.demand.prediction.model;
+package ru.kabor.demand.prediction.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

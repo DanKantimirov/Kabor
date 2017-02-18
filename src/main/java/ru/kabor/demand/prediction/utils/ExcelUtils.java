@@ -7,6 +7,9 @@ import org.apache.poi.ss.usermodel.*;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.kabor.demand.prediction.service.RequestServiceImplementation;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
 import javax.imageio.ImageIO;
@@ -20,6 +23,8 @@ import java.util.List;
 
 
 public class ExcelUtils {
+
+	private static final Logger LOG = LoggerFactory.getLogger(RequestServiceImplementation.class);
 
 	/** List for validating csv headers*/
 	public static List<String> validHeaders = new ArrayList<>();
@@ -40,6 +45,7 @@ public class ExcelUtils {
 	 * @throws Exception
      */
 	public static void validateCsvHeaders(Workbook workbook) throws InvalidHeaderException	{
+		LOG.debug("prepare validation");
 		Row headerRow = workbook.getSheetAt(0).getRow(0);
 		List<String> requestHeaders = new ArrayList<>();
 		for(int i=0; i<=validHeaders.size(); i++) {
@@ -49,6 +55,7 @@ public class ExcelUtils {
 		if (!validHeaders.equals(requestHeaders)) {
 			throw new InvalidHeaderException();
 		}
+		LOG.debug("success validation");
 	}
 
 	/** Find column in row with  by content*/

@@ -100,7 +100,7 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     		throw new DataServiceException("Wrong captcha");
     	}
 		try {
-			requestService.processNewRequest(file, request.getParameterMap());
+			requestService.addNewRequest(file, request.getParameterMap());
 
 			dataService.putFile(file);
 

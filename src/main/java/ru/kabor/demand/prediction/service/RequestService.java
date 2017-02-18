@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * interface for maneging db entities
+ * interface for managing request db entities
  */
 public interface RequestService {
 
@@ -27,5 +27,13 @@ public interface RequestService {
      * @throws IOException
      * @throws InvalidFormatException
      */
-    void processNewRequest(MultipartFile file, Map<String, String[]> reqParams) throws InvalidHeaderException, IOException, InvalidFormatException;
+    void addNewRequest(MultipartFile file, Map<String, String[]> reqParams)
+            throws InvalidHeaderException, IOException, InvalidFormatException;
+
+    /**
+     * read request from db and parse it values
+     * @throws IOException
+     * @throws InvalidFormatException
+     */
+    void importRawRequest() throws IOException, InvalidFormatException;
 }

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import ru.kabor.demand.prediction.service.DataService;
+import ru.kabor.demand.prediction.service.RequestService;
 
 @Component
 public class StorageFolderReader {
@@ -26,12 +27,16 @@ public class StorageFolderReader {
 	@Autowired
 	private DataService dataService;
 
+	@Autowired
+	RequestService requestService;
+
 	private static final Logger LOG = LoggerFactory.getLogger(StorageFolderReader.class);
 
 	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
 	@PostConstruct
 	private void getCurrentTime() {
+		LOG.debug("demon started");
 		ExecutorService es = Executors.newFixedThreadPool(this.readerPoolSize);
 		Integer startupThreadDelay = 0;
 		if (this.delayThreadTimeout > 0) {
@@ -46,12 +51,17 @@ public class StorageFolderReader {
 					try {
 						System.out.println(this.dataService.getAvailableDocument());
 						System.out.println(("The time is now:" + dateFormat.format(new Date())));
+						LOG.debug("demon awoke");
+
+						requestService.importRawRequest();
+
 						// read v_request where status = 0;
 						// get just 1 request
 						// parse excel
 						// send param to R methods
 						// get result and make new Excel
 						//try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception TODO: decomment
+						LOG.debug("demon sleep");
 						try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
 					} catch (Exception e) {
 						LOG.error("ERROR in StorageFolderReader" + e.toString());
