@@ -22,7 +22,7 @@ public class EmailSenderTest {
 		assertTrue(true);
 	}
 	
-	@Test
+	//@Test
 	public void messageWithResult() {
 		try {
 			sender.sendMessageWithResult(11L);

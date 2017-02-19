@@ -1,5 +1,16 @@
 package ru.kabor.demand.prediction.service;
 
+import static ru.kabor.demand.prediction.utils.ConstantUtils.PARSE_EXCEL_SALES_REST_LIST_SIZE;
+import static ru.kabor.demand.prediction.utils.ExcelUtils.readValueFromXls;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -10,24 +21,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
 import ru.kabor.demand.prediction.entity.Request;
 import ru.kabor.demand.prediction.entity.SalesRest;
 import ru.kabor.demand.prediction.repository.RequestRepository;
 import ru.kabor.demand.prediction.utils.ConstantUtils;
 import ru.kabor.demand.prediction.utils.ExcelUtils;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import static ru.kabor.demand.prediction.utils.ConstantUtils.PARSE_EXCEL_SALES_REST_LIST_SIZE;
-import static ru.kabor.demand.prediction.utils.ExcelUtils.readValueFromXls;
 
 @Service
 public class RequestServiceImplementation implements RequestService {
@@ -42,15 +42,18 @@ public class RequestServiceImplementation implements RequestService {
 
     @Autowired
     private SalesRestService salesRestService;
+    
+    java.text.SimpleDateFormat simpleDateTimeFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @Override
     public void createRequest(Map<String, String[]> reqParams, String documentPath) {
         LOG.debug("prepare request for saving to db ");
+        java.util.Date currentTime = new java.util.Date();
         Request request = new Request();
         request.setDocumentPath(documentPath);
         request.setEmail(reqParams.get("inputEmail")[0]);
         request.setStatus(ConstantUtils.REQUEST_ADDED);
-        request.setSendDateTime(LocalDateTime.now());
+        request.setSendDateTime(simpleDateTimeFormat.format(currentTime));
         requestRepository.save(request);
         LOG.debug("new request successfully saved to db");
     }

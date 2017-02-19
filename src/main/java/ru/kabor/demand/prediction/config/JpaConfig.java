@@ -2,6 +2,7 @@ package ru.kabor.demand.prediction.config;
 
 import java.util.Properties;
 
+import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -78,6 +79,12 @@ public class JpaConfig implements TransactionManagementConfigurer{
 	    @Bean
 	    public PlatformTransactionManager annotationDrivenTransactionManager() {
 	        return new JpaTransactionManager();
+	    }
+	    
+	    @Bean
+	        JpaTransactionManager transactionManager = new JpaTransactionManager();
+	        transactionManager.setEntityManagerFactory(entityManagerFactory);
+	        return transactionManager;
 	    }
 	    
 	    /*

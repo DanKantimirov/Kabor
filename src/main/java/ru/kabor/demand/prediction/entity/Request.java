@@ -1,14 +1,22 @@
 package ru.kabor.demand.prediction.entity;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+
+import org.hibernate.validator.constraints.Email;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.validator.constraints.Email;
-
-import javax.persistence.*;
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -27,7 +35,7 @@ public class Request {
     private String email;
 
     @Column(name = "send_date_time", nullable = false)
-    private LocalDateTime sendDateTime;
+    private String sendDateTime;
 
     @Column(nullable = false)
     private int status;
@@ -43,8 +51,8 @@ public class Request {
 
     @OneToMany(mappedBy = "request", targetEntity = SalesRest.class, cascade = CascadeType.ALL)
     Set<SalesRest> salesRest = new HashSet<>();
-    
+
     /*@OneToOne(mappedBy = "request", targetEntity = ForecastParameter.class, cascade = CascadeType.ALL)
     ForecastParameter forecastParameter;*/
-    
+
 }
