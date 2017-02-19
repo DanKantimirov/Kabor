@@ -43,4 +43,8 @@ public class Request {
 
     @OneToMany(mappedBy = "request", targetEntity = SalesRest.class, cascade = CascadeType.ALL)
     Set<SalesRest> salesRest = new HashSet<>();
+    
+    /*@OneToOne(mappedBy = "request", targetEntity = ForecastParameter.class, cascade = CascadeType.ALL)
+    ForecastParameter forecastParameter;*/
+    
 }

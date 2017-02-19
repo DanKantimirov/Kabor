@@ -31,7 +31,7 @@ public interface ExcelModeController {
 	 * @throws IOException 
 	 * @throws UnsupportedEncodingException 
 	 */
-	public String handleFileUpload(MultipartFile file, String trainingStart, String trainingEnd,
+	public String handleFileUpload(MultipartFile file, String defaultSettingsInput,
 		   Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType, String gRecaptchaResponse,
 		   String email, HttpServletRequest request, RedirectAttributes redirectAttributes)
 					throws DataServiceException, UnsupportedEncodingException, IOException;

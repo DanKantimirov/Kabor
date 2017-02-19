@@ -78,19 +78,25 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     }
 
 	/** Send file to server and start making forecasting
+	 * @param file Excel file with sales and rests
+	 * @param defaultSettingsInput If it is not null or 0: 7 days, WINTER_HOLT, none smoothing
+	 * @param forecastDuration Duration of forecast
+	 * @param forecastMethod Method of forecasting
+	 * @param smoothType Method of smoothing raw data
+	 * @param email User's email
+	 * @param gRecaptchaResponse Response from captcha
 	 * @throws DataServiceException
 	 * @throws IOException 
 	 * @throws UnsupportedEncodingException */
     @PostMapping("/excelMode")
     public String handleFileUpload(
-    		@RequestParam("fileInput") MultipartFile file, 
-    		@RequestParam("dateStartInput") String trainingStart,
-    		@RequestParam("dateEndInput") String trainingEnd,
-    		@RequestParam("predictionDaysInput") Integer forecastDuration,
-    		@RequestParam("predictionMethod") FORECAST_METHOD forecastMethod,
-    		@RequestParam("useSmoothInput") SMOOTH_TYPE smoothType,
-    		@RequestParam("inputEmail") String email,
-    		@RequestParam("g-recaptcha-response") String gRecaptchaResponse,
+    		@RequestParam(name="fileInput", required=true) MultipartFile file,
+    		@RequestParam(name="defaultSettingsInput", required=true) String defaultSettingsInput,
+    		@RequestParam(name="predictionDaysInput", required=false) Integer forecastDuration,
+    		@RequestParam(name="predictionMethod", required=false) FORECAST_METHOD forecastMethod,
+    		@RequestParam(name="useSmoothInput", required=false) SMOOTH_TYPE smoothType,
+    		@RequestParam(name="inputEmail", required=true) String email,
+    		@RequestParam(name="g-recaptcha-response", required=true) String gRecaptchaResponse,
 			HttpServletRequest request,
     		RedirectAttributes redirectAttributes) throws DataServiceException, UnsupportedEncodingException, IOException {
     	
@@ -101,20 +107,13 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     	}
 		try {
 			requestService.addNewRequest(file, request.getParameterMap());
-
 			dataService.putFile(file);
-
 			redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename() + "!");
-
 		} catch (InvalidHeaderException exception) {
 			redirectAttributes.addFlashAttribute("message", "Your file format is invalid. Check file columns name.");
 		} catch (InvalidFormatException exception) {
 			redirectAttributes.addFlashAttribute("message", "Unable process your file. Perhaps it has been broken.");
 		}
-
-		// respond to user as quickly as possible.
-		// in html page
-
         return "redirect:/excelMode";
     }
 

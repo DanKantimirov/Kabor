@@ -48,7 +48,22 @@
 					$(".frm").hide("fast");
 					$("#formStep2").show("slow");
 				});
+				
+				//Default settings
+				$("#defaultSettingsInput").click(function() {
+					if( $("#defaultSettingsInput option:selected").text()=="Yes" ){
+						$("#predictionDaysInput").prop("disabled",true);
+						$("#predictionMethod").prop("disabled",true);
+						$("#useSmoothInput").prop("disabled",true);
+					} else{
+						$("#predictionDaysInput").prop("disabled",false);
+						$("#predictionMethod").prop("disabled",false);
+						$("#useSmoothInput").prop("disabled",false);
+					}
+				});
 			});
+			
+			
 		</script>
 		
 	</head>
@@ -122,20 +137,15 @@
 				<div id="formStep2" class="frm">
 					<legend>2.) Enter forecast parameters</legend>
 					<fieldset>
-						<!-- dateStartInput-->
+						<!-- default Settings -->
 						<div class="form-group">
-						  <label class="col-md-4 control-label" for="dateStartInput">First date of analysis</label>  
+						  <label class="col-md-4 control-label" for="defaultSettingsInput">Use default settings</label>
 						  <div class="col-md-4">
-						 <input id="dateStartInput" name="dateStartInput" data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md required" type="text"></input>
-						  <span class="help-block">First date of analysis</span>  
-						 </div>
-						</div>
-						<!-- dateEndInput-->
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="dateEndInput">Start date of forecasting</label>  
-						  <div class="col-md-4">
-						  <input id="dateEndInput" name="dateEndInput"  data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md required" type="text"></input>
-						  <span class="help-block">First date of forecasting and the last date of analysis</span>
+							<select id="defaultSettingsInput" name="defaultSettingsInput" class="form-control">
+							  <option value="0">No</option>
+							  <option value="1">Yes</option>
+							</select>
+							<span class="help-block">Default: 7 days, WINTER_HOLT, none smoothing</span>  
 						  </div>
 						</div>
 						<!-- predictionDaysInput -->

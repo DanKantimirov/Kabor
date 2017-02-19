@@ -30,13 +30,10 @@ public class ExcelUtils {
 	public static List<String> validHeaders = new ArrayList<>();
 
 	static {
-		validHeaders.add(0, "id");
-		validHeaders.add(1, "whs_id");
-		validHeaders.add(2, "art_id");
-		validHeaders.add(3, "day_id");
-		validHeaders.add(4, "sale_qnty");
-		validHeaders.add(5, "rest_qnty");
-		validHeaders.add(6, "request_id");
+		validHeaders.add(0, "whs_id");
+		validHeaders.add(1, "art_id");
+		validHeaders.add(2, "day_id");
+		validHeaders.add(3, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
 	}
 
 	/** Validation csv file headers
@@ -48,14 +45,15 @@ public class ExcelUtils {
 		LOG.debug("prepare validation");
 		Row headerRow = workbook.getSheetAt(0).getRow(0);
 		List<String> requestHeaders = new ArrayList<>();
-		for(int i=0; i<=validHeaders.size(); i++) {
+		
+		for(int i=0; i<validHeaders.size(); i++) {
 			requestHeaders.add(readValueFromXls(workbook, headerRow, i));
 		}
 
 		if (!validHeaders.equals(requestHeaders)) {
-			throw new InvalidHeaderException();
+			LOG.error("Invalid header in Excel File:" + requestHeaders);
+			throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
 		}
-		LOG.debug("success validation");
 	}
 
 	/** Find column in row with  by content*/
