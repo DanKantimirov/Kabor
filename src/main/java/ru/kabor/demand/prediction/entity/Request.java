@@ -10,6 +10,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.validator.constraints.Email;
@@ -52,7 +53,6 @@ public class Request {
     @OneToMany(mappedBy = "request", targetEntity = SalesRest.class, cascade = CascadeType.ALL)
     Set<SalesRest> salesRest = new HashSet<>();
 
-    /*@OneToOne(mappedBy = "request", targetEntity = ForecastParameter.class, cascade = CascadeType.ALL)
-    ForecastParameter forecastParameter;*/
-
+    @OneToOne(mappedBy = "request", targetEntity = ForecastParameter.class, cascade = CascadeType.ALL)
+    ForecastParameter forecastParameter;
 }

@@ -22,11 +22,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import ru.kabor.demand.prediction.entity.ForecastParameter;
 import ru.kabor.demand.prediction.entity.Request;
 import ru.kabor.demand.prediction.entity.SalesRest;
+import ru.kabor.demand.prediction.repository.ForecastParameterRepository;
 import ru.kabor.demand.prediction.repository.RequestRepository;
 import ru.kabor.demand.prediction.utils.ConstantUtils;
 import ru.kabor.demand.prediction.utils.ExcelUtils;
+import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
+import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
 @Service
@@ -36,6 +40,9 @@ public class RequestServiceImplementation implements RequestService {
 
     @Autowired
     RequestRepository requestRepository;
+    
+    @Autowired
+    ForecastParameterRepository forecastParameterRepository;
 
     @Autowired
     private DataService dataService;
@@ -49,12 +56,30 @@ public class RequestServiceImplementation implements RequestService {
     public void createRequest(Map<String, String[]> reqParams, String documentPath) {
         LOG.debug("prepare request for saving to db ");
         java.util.Date currentTime = new java.util.Date();
+        
         Request request = new Request();
         request.setDocumentPath(documentPath);
         request.setEmail(reqParams.get("inputEmail")[0]);
         request.setStatus(ConstantUtils.REQUEST_ADDED);
         request.setSendDateTime(simpleDateTimeFormat.format(currentTime));
-        requestRepository.save(request);
+        request = requestRepository.saveAndFlush(request);
+        
+        ForecastParameter forecastParameter = new ForecastParameter();
+        String defaultSettingsInput = reqParams.get("defaultSettingsInput")[0];
+        if(defaultSettingsInput!=null && defaultSettingsInput.equals("1")){
+        	forecastParameter.setDuration(7);
+        	forecastParameter.setForecast_method(FORECAST_METHOD.WINTER_HOLT);
+        	forecastParameter.setSmoothing_method(SMOOTH_TYPE.NO);
+        } else{
+        	Integer duration = Integer.valueOf(reqParams.get("predictionDaysInput")[0]);
+        	FORECAST_METHOD method = FORECAST_METHOD.valueOf(reqParams.get("predictionMethod")[0]);
+        	SMOOTH_TYPE smooth = SMOOTH_TYPE.valueOf(reqParams.get("useSmoothInput")[0]);
+        	forecastParameter.setDuration(duration);
+        	forecastParameter.setForecast_method(method);
+        	forecastParameter.setSmoothing_method(smooth);
+        }
+        forecastParameter.setRequest(request);											//Try to make it in one transaction with creating request
+        forecastParameterRepository.save(forecastParameter);
         LOG.debug("new request successfully saved to db");
     }
 
