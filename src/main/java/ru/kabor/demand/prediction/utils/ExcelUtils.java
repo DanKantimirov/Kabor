@@ -3,12 +3,14 @@ package ru.kabor.demand.prediction.utils;
 import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.imgscalr.Scalr;
 import org.imgscalr.Scalr.Method;
 import org.imgscalr.Scalr.Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.multipart.MultipartFile;
 import ru.kabor.demand.prediction.service.RequestServiceImplementation;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
@@ -30,19 +32,21 @@ public class ExcelUtils {
 	public static List<String> validHeaders = new ArrayList<>();
 
 	static {
-		validHeaders.add(0, "whs_id");
-		validHeaders.add(1, "art_id");
-		validHeaders.add(2, "day_id");
-		validHeaders.add(3, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
+		validHeaders.add(0, "id");
+		validHeaders.add(1, "whs_id");
+		validHeaders.add(2, "art_id");
+		validHeaders.add(3, "day_id");
+		validHeaders.add(4, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
 	}
 
 	/** Validation csv file headers
 	 *
-	 * @param workbook
+	 * @param file
 	 * @throws Exception
      */
-	public static void validateCsvHeaders(Workbook workbook) throws InvalidHeaderException	{
+	public static void validateCsvHeaders(MultipartFile file) throws InvalidHeaderException, IOException, InvalidFormatException {
 		LOG.debug("prepare validation");
+		Workbook workbook = WorkbookFactory.create(file.getInputStream());
 		Row headerRow = workbook.getSheetAt(0).getRow(0);
 		List<String> requestHeaders = new ArrayList<>();
 		
@@ -52,8 +56,10 @@ public class ExcelUtils {
 
 		if (!validHeaders.equals(requestHeaders)) {
 			LOG.error("Invalid header in Excel File:" + requestHeaders);
+			workbook.close();
 			throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
 		}
+		workbook.close();
 	}
 
 	/** Find column in row with  by content*/

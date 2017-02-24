@@ -108,7 +108,33 @@ public class EmailSender {
 		
 		return session;
 	}
-	
+
+	/**
+	 * Send message that we began process forecast
+	 * @param requestId
+     */
+	public void sendMessageRequestAdded(Long requestId) throws EmailSenderException, MessagingException {
+		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageRequestAddedText(requestId);
+		String userEmail = emailMessageParameters.getEmail();
+		String messageBody = emailMessageParameters.getMessageBody();
+
+		if (userEmail == null || userEmail.trim().equals("")) {
+			throw new EmailSenderException("Empty email address. RequestId:" + requestId);
+		}
+
+		if (messageBody == null || messageBody.trim().equals("")) {
+			throw new EmailSenderException("Empty message body. RequestId:" + requestId);
+		}
+
+		Message message = new MimeMessage(session);
+		message.setFrom(new InternetAddress(this.fullLogin));
+		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
+		message.setSubject("Susseccfully demand forecast. Request:" + requestId.toString());
+		message.setSentDate(new Date());
+		message.setContent(messageBody, "text/html");
+		Transport.send(message);
+	}
+
 	/** Send message with link to forecast demand
 	 * @param requestId v_request.requestId
 	 * @throws EmailSenderException */

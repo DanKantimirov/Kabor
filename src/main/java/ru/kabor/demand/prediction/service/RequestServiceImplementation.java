@@ -49,20 +49,20 @@ public class RequestServiceImplementation implements RequestService {
 
     @Autowired
     private SalesRestService salesRestService;
-    
+
     java.text.SimpleDateFormat simpleDateTimeFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     @Override
-    public void createRequest(Map<String, String[]> reqParams, String documentPath) {
+    public Request createRequest(Map<String, String[]> reqParams, MultipartFile file) throws DataServiceException {
         LOG.debug("prepare request for saving to db ");
         java.util.Date currentTime = new java.util.Date();
         
         Request request = new Request();
-        request.setDocumentPath(documentPath);
+        request.setDocumentPath(file.getOriginalFilename());
         request.setEmail(reqParams.get("inputEmail")[0]);
-        request.setStatus(ConstantUtils.REQUEST_ADDED);
+        request.setStatus(ConstantUtils.REQUEST_PREPEARED);
         request.setSendDateTime(simpleDateTimeFormat.format(currentTime));
-        request = requestRepository.saveAndFlush(request);
+        request = requestRepository.save(request);
         
         ForecastParameter forecastParameter = new ForecastParameter();
         String defaultSettingsInput = reqParams.get("defaultSettingsInput")[0];
@@ -80,18 +80,22 @@ public class RequestServiceImplementation implements RequestService {
         }
         forecastParameter.setRequest(request);											//Try to make it in one transaction with creating request
         forecastParameterRepository.save(forecastParameter);
+
+        dataService.putFile(file);
+        request.setStatus(ConstantUtils.REQUEST_ADDED);
+        requestRepository.saveAndFlush(request);
+
         LOG.debug("new request successfully saved to db");
+
+        return request;
     }
 
     @Override
-    public void addNewRequest(MultipartFile file, Map<String, String[]> reqParams)
-            throws InvalidHeaderException, IOException, InvalidFormatException {
-        LOG.debug("processing new request. prepare workbook");
-        Workbook workbook = WorkbookFactory.create(file.getInputStream());
-
-        ExcelUtils.validateCsvHeaders(workbook);
-
-        createRequest(reqParams, file.getOriginalFilename());
+    public Request addNewRequest(MultipartFile file, Map<String, String[]> reqParams)
+            throws InvalidHeaderException, IOException, InvalidFormatException, DataServiceException {
+        LOG.debug("processing new request. validate ans save");
+        ExcelUtils.validateCsvHeaders(file);
+        return createRequest(reqParams, file);
     }
 
     @Override
@@ -139,10 +143,10 @@ public class RequestServiceImplementation implements RequestService {
                     saleRestList.clear();
                 }
             }
-
             if (saleRestList.size() > 0) {
                 salesRestService.storeBathSalesRest(saleRestList);
             }
+            workbook.close();
             LOG.debug("all rows request #%d successfully savedto db", request.getId());
         }
         LOG.debug("request parse procedure finished");

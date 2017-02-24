@@ -14,6 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.kabor.demand.prediction.email.EmailSender;
+import ru.kabor.demand.prediction.email.EmailSenderException;
+import ru.kabor.demand.prediction.entity.Request;
 import ru.kabor.demand.prediction.service.DataService;
 import ru.kabor.demand.prediction.service.DataServiceException;
 import ru.kabor.demand.prediction.service.RequestService;
@@ -22,6 +25,7 @@ import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.VerifyCaptcha;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
+import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -35,6 +39,9 @@ public class ExcelModeControllerImpl implements ExcelModeController {
 
 	@Autowired
 	RequestService requestService;
+
+	@Autowired
+	EmailSender emailSender;
 
 	private static final Logger LOG = LoggerFactory.getLogger(ExcelModeControllerImpl.class);
 	
@@ -106,15 +113,20 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     		throw new DataServiceException("Wrong captcha");
     	}
 		try {
-			requestService.addNewRequest(file, request.getParameterMap());
-			dataService.putFile(file);
-			redirectAttributes.addFlashAttribute("message", "You successfully uploaded " + file.getOriginalFilename() + "!");
+			Request reqEnt = requestService.addNewRequest(file, request.getParameterMap());
+			emailSender.sendMessageRequestAdded((long) reqEnt.getId());
+			redirectAttributes.addFlashAttribute("message", "Your file is valid and we have already started forecast processing!"
+			+ "You will receive a notification to email when the process is complete.");
 		} catch (InvalidHeaderException exception) {
 			redirectAttributes.addFlashAttribute("message", "Your file format is invalid. Check file columns name.");
 		} catch (InvalidFormatException exception) {
 			redirectAttributes.addFlashAttribute("message", "Unable process your file. Perhaps it has been broken.");
+		} catch (MessagingException e) {
+			redirectAttributes.addFlashAttribute("message", "File uploaded. Forecast starting. Cant send email.");
+		} catch (EmailSenderException e) {
+			e.printStackTrace();
 		}
-        return "redirect:/excelMode";
+		return "redirect:/excelMode";
     }
 
     /** Handle all exceptions*/

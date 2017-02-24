@@ -14,7 +14,22 @@ public class EmailBodyCreator {
 	
 	@Autowired
 	DataRepository dataRepository;
-	
+
+	public EmailMessageParameters getMessageRequestAddedText(Long requestId){
+		StringBuilder messageBodyBuilder = new StringBuilder("");
+		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
+		String filePath = this.dataRepository.getAttachmentPathByRequestId(requestId);
+
+		messageBodyBuilder.append("<p>Dear {0}.</p>");
+		messageBodyBuilder.append("<p>We have already begun to fulfill your request #{1}.</p>");		//TODO: make better realization in next sprint
+		messageBodyBuilder.append("<p>When the execution is completed, we will send you an email notification.</p>");
+
+		String messageBody = MessageFormat.format(messageBodyBuilder.toString(), userEmail,requestId.toString(),filePath);
+
+		EmailMessageParameters emailMessageParameters = new EmailMessageParameters(messageBody, userEmail, filePath);
+		return emailMessageParameters;
+	}
+
 	public EmailMessageParameters getMessageWithResultText(Long requestId){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
