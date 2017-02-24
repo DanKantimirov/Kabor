@@ -1,16 +1,23 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<meta name="description" content="Forecasting of demand"/>
+		<meta name="author" content="Kantimirov D. Boroda A."/>
+		
 		<title>Forecasting of demand by Excel file</title>
 		<script src="js/jquery-3.1.1.js"></script>
 		<script src="js/jquery.validate.js"></script>
 		<script src="js/additional-methods.js"></script>
-		<script src="js/bootstrap.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+		
 		<script src="js/bootstrap-datepicker.js"></script>
 		<script src="locales/bootstrap-datepicker.ru.min.js"></script>
-		<link rel="stylesheet" href="css/bootstrap.min.css"></link>
-		<link rel="stylesheet" href="css/app.css"></link>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"></link>
+		<link rel="stylesheet" href="css/demand-forecasting.css"></link>
 		
 		
 		<script type="text/javascript">
@@ -68,185 +75,187 @@
 		
 	</head>
 	
-	<body>
+	<body>	
 	
-		<div sec:authorize="isAnonymous()">
-			<div><p></p></div>
-				<div class="container-fluid">
-					<div class="alert alert-danger">It's possible that you are not logged in.</div>
-					<button type="button" class="btn btn-primary" onclick="location.href='index.html'">Login</button>
-				</div>
-		</div>
-	
-		<div sec:authorize="hasRole('USER')">
-			<!-- Navbar -->
-			<nav class="navbar navbar-default">
-			  <div class="container">
+		 <!-- Navigation -->
+		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container-fluid">
 				<!-- Brand and toggle get grouped for better mobile display -->
 				<div class="navbar-header">
-				  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2">
-					<span class="sr-only">Toggle navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				  </button>
-				  <a class="navbar-brand" href="#">Forecasting of demand</a>
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="index.html">Forecasting of demand</a>
 				</div>
-			
 				<!-- Collect the nav links, forms, and other content for toggling -->
-				<div class="collapse navbar-collapse" id="navbar-collapse-2">
-				  <ul class="nav navbar-nav navbar-left">
-					<li class='my_link_button_2'><a class = 'btn btn-info my_link_button' id='my_link_button' href="index.html">One-One</a></li>
-					<li class='my_link_button_2'><a class = 'btn btn-info my_link_button' id='my_link_button' href="multiple.html">Many-Many</a></li>
-					<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="excelMode.html">From Excel</a></li>
-				  </ul>
-				  <ul class="nav navbar-nav navbar-right">
-					<li><button type="button col-md-4" class="btn btn-info pull-right navbar-btn" onclick="location.href='logout'">Log out</button></li>
-				  </ul>
-				</div><!-- /.navbar-collapse -->
-			  </div><!-- /.container -->
-			</nav><!-- /.navbar -->
-
-			<!-- Message from server -->
-			<div th:if="${message}">
-				<h2 th:text="${message}"/>
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li>
+							<a href="index.html#howToCreateXlsFile">How to do</a>
+						</li>
+						<li>
+							<a href="excelMode.html">Start forecasting</a>
+						</li>
+						<li>
+							<a href="#">About project</a>
+						</li>
+						<li>
+							<a href="#">Contact us</a>
+						</li>
+					</ul>
+				</div>
+				<!-- /.navbar-collapse -->
 			</div>
-			
-			<form name="sendExcelForm" id="sendExcelForm" class="form-horizontal" method="POST" enctype="multipart/form-data" action="/demand/excelMode">
- 
-				<div id="formStep1" class="frm">
-					<legend>1.) Enter your Excel or CSV file</legend>
-					<fieldset>
-						<!-- fileInput --> 
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="fileInput">File to upload:</label>
-						  <div class="col-md-4">
-							<input id="fileInput" name="fileInput" class="input-file btn-info required" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"></input>
-							<span class="help-block">Excel or CSV file with sales statistic</span>
-						  </div>
-						</div>
-						<!-- 1->2 -->
-						<div class="form-group">
-						  <div class="col-lg-10 col-lg-offset-2">
-							<button class="btn btn-primary open1" type="button">Next <span class="fa fa-arrow-right"></span></button> 
-						  </div>
-						</div>
-					</fieldset>
-				</div>
-				 
-				<div id="formStep2" class="frm">
-					<legend>2.) Enter forecast parameters</legend>
-					<fieldset>
-						<!-- default Settings -->
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="defaultSettingsInput">Use default settings</label>
-						  <div class="col-md-4">
-							<select id="defaultSettingsInput" name="defaultSettingsInput" class="form-control">
-							  <option value="0">No</option>
-							  <option value="1">Yes</option>
-							</select>
-							<span class="help-block">Default: 7 days, WINTER_HOLT, none smoothing</span>  
-						  </div>
-						</div>
-						<!-- predictionDaysInput -->
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
-						  <div class="col-md-4">
-							<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
-							  <option value="1">1</option>
-							  <option value="2">2</option>
-							  <option value="3">3</option>
-							  <option value="4">4</option>
-							  <option value="5">5</option>
-							  <option value="6">6</option>
-							  <option value="7">7</option>
-							  <option value="8">8</option>
-							  <option value="9">9</option>
-							  <option value="10">10</option>
-							  <option value="11">11</option>
-							  <option value="12">12</option>
-							  <option value="13">13</option>
-							  <option value="14">14</option>
-							</select>
-							<span class="help-block">Count days in forecast</span>  
-						  </div>
-						</div>
-						<!-- predictionMethod -->
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
-						  <div class="col-md-4">
-							<select id="predictionMethod" name="predictionMethod" class="form-control">
-								<option value="ARIMA_2_0_0">ARIMA_2_0_0</option>
-								<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
-								<option value="WINTER_HOLT">WINTER_HOLT</option>
-							</select>
-							<span class="help-block">Method of demand forecasting</span> 
-						  </div>
-						</div>
-						<!-- useSmoothInput -->
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
-						  <div class="col-md-4">
-							<select id="useSmoothInput" name="useSmoothInput" class="form-control">
-							  <option value="YES">30% of deviation</option>
-							  <option value="NO">None</option>
-							</select>
-							<span class="help-block">Method of deleting extremums</span>  
-						  </div>
-						</div>
-						<div class="clearfix" style="height: 10px;clear: both;"></div>
-						<!-- 2->3 and 2->1 -->
-						<div class="form-group">
-						  <div class="col-lg-10 col-lg-offset-2">
-							<button class="btn btn-warning back2" type="button"><span class="fa fa-arrow-left"></span> Back</button> 
-							<button class="btn btn-primary open2" type="button">Next <span class="fa fa-arrow-right"></span></button> 
-						  </div>
-						</div>
-					</fieldset>
-				</div>
-				<div id="formStep3" class="frm">
-					<legend>3.) Enter email for sending result of forecasting</legend>
-					<fieldset>
-					
-						<!-- inputEmail -->
-						<div class="form-group">
-						  <label class="col-md-4 control-label" for="inputEmail">Email: </label>  
-						  <div class="col-md-4">
-						  <input id="inputEmail" name="inputEmail" placeholder="somemail@yahoo.com" class="form-control input-md required" type="text"></input>
-						  <span class="help-block">Email for sending result of forecasting</span>  
-						  </div>
-						</div>
+			<!-- /.container -->
+		</nav>
 
-						<!-- captcha -->
-						<div class="form-group">
-							<label class="col-md-4 control-label" for="singlebutton">Captcha</label>
-							<div class="col-md-4">
-								<script src="https://www.google.com/recaptcha/api.js" async="true" defer="true"></script>
-								<div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
-							</div>
-						</div>
-						<!-- for preventing xss -->
-						<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"></input>
-						<!-- 3->2 -->
-						<div class="form-group">
-							<div class="col-lg-10 col-lg-offset-2">
-								<button class="btn btn-warning back3" type="button"><span class="fa fa-arrow-left"></span> Back</button> 
-								<input type="submit" value="Upload" class="btn btn-primary"></input>
-							</div>
-						</div>
-					</fieldset>
+			<div class="container-fluid">
+				<div class="row">
+					<!-- Message from server -->
+					<div th:if="${message}">
+						<h2 th:text="${message}"/>
+					</div>
 				</div>
-			</form>
-			<!-- Downloaded files -->
-			<div>
-				<ul>
-					<li th:each="file : ${files}">
-						<a th:href="${file}" th:text="${file}" />
-					</li>
-				</ul>
+				
+				<div class="row">
+					<form name="sendExcelForm" id="sendExcelForm" class="form-horizontal" method="POST" enctype="multipart/form-data" action="/demand/excelMode">
+
+						<div id="formStep1" class="frm">
+							<legend>1.) Enter your Excel or CSV file</legend>
+							<fieldset>
+								<!-- fileInput --> 
+								<div class="form-group">
+								  <label class="col-md-4 control-label" for="fileInput">File to upload:</label>
+								  <div class="col-md-4">
+									<input id="fileInput" name="fileInput" class="input-file btn-info required" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"></input>
+									<span class="help-block">Excel or CSV file with sales statistic</span>
+								  </div>
+								</div>
+								<!-- 1->2 -->
+								<div class="form-group">
+								  <div class="col-lg-10 col-lg-offset-2">
+									<button class="btn btn-primary open1" type="button">Next <span class="fa fa-arrow-right"></span></button> 
+								  </div>
+								</div>
+							</fieldset>
+						</div>
+						 
+						<div id="formStep2" class="frm">
+							<legend>2.) Enter forecast parameters</legend>
+							<fieldset>
+								<!-- default Settings -->
+								<div class="form-group">
+								  <label class="col-md-4 control-label" for="defaultSettingsInput">Use default settings</label>
+								  <div class="col-md-4">
+									<select id="defaultSettingsInput" name="defaultSettingsInput" class="form-control">
+									  <option value="0">No</option>
+									  <option value="1">Yes</option>
+									</select>
+									<span class="help-block">Default: 7 days, WINTER_HOLT, none smoothing</span>  
+								  </div>
+								</div>
+								<!-- predictionDaysInput -->
+								<div class="form-group">
+								  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
+								  <div class="col-md-4">
+									<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
+									  <option value="1">1</option>
+									  <option value="2">2</option>
+									  <option value="3">3</option>
+									  <option value="4">4</option>
+									  <option value="5">5</option>
+									  <option value="6">6</option>
+									  <option value="7">7</option>
+									  <option value="8">8</option>
+									  <option value="9">9</option>
+									  <option value="10">10</option>
+									  <option value="11">11</option>
+									  <option value="12">12</option>
+									  <option value="13">13</option>
+									  <option value="14">14</option>
+									</select>
+									<span class="help-block">Count days in forecast</span>  
+								  </div>
+								</div>
+								<!-- predictionMethod -->
+								<div class="form-group">
+								  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
+								  <div class="col-md-4">
+									<select id="predictionMethod" name="predictionMethod" class="form-control">
+										<option value="ARIMA_2_0_0">ARIMA_2_0_0</option>
+										<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
+										<option value="WINTER_HOLT">WINTER_HOLT</option>
+									</select>
+									<span class="help-block">Method of demand forecasting</span> 
+								  </div>
+								</div>
+								<!-- useSmoothInput -->
+								<div class="form-group">
+								  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
+								  <div class="col-md-4">
+									<select id="useSmoothInput" name="useSmoothInput" class="form-control">
+									  <option value="YES">30% of deviation</option>
+									  <option value="NO">None</option>
+									</select>
+									<span class="help-block">Method of deleting extremums</span>  
+								  </div>
+								</div>
+								<div class="clearfix" style="height: 10px;clear: both;"></div>
+								<!-- 2->3 and 2->1 -->
+								<div class="form-group">
+								  <div class="col-lg-10 col-lg-offset-2">
+									<button class="btn btn-warning back2" type="button"><span class="fa fa-arrow-left"></span> Back</button> 
+									<button class="btn btn-primary open2" type="button">Next <span class="fa fa-arrow-right"></span></button> 
+								  </div>
+								</div>
+							</fieldset>
+						</div>
+						<div id="formStep3" class="frm">
+							<legend>3.) Enter email for sending result of forecasting</legend>
+							<fieldset>
+							
+								<!-- inputEmail -->
+								<div class="form-group">
+								  <label class="col-md-4 control-label" for="inputEmail">Email: </label>  
+								  <div class="col-md-4">
+								  <input id="inputEmail" name="inputEmail" placeholder="somemail@yahoo.com" class="form-control input-md required" type="text"></input>
+								  <span class="help-block">Email for sending result of forecasting</span>  
+								  </div>
+								</div>
+
+								<!-- captcha -->
+								<div class="form-group">
+									<label class="col-md-4 control-label" for="singlebutton">Captcha</label>
+									<div class="col-md-4">
+										<script src="https://www.google.com/recaptcha/api.js" async="true" defer="true"></script>
+										<div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+									</div>
+								</div>
+								<!-- for preventing xss -->
+								<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"></input>
+								<!-- 3->2 -->
+								<div class="form-group">
+									<div class="col-lg-10 col-lg-offset-2">
+										<button class="btn btn-warning back3" type="button"><span class="fa fa-arrow-left"></span> Back</button> 
+										<input type="submit" value="Upload" class="btn btn-primary"></input>
+									</div>
+								</div>
+							</fieldset>
+						</div>
+					</form>
+				</div>
+				
+				<!-- Downloaded files -->
+				<div class="row">
+					<ul>
+						<li th:each="file : ${files}">
+							<a th:href="${file}" th:text="${file}" />
+						</li>
+					</ul>
+				</div>
 			</div>
-		
-		</div>
-
 	</body>
 </html>
