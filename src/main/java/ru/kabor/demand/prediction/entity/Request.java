@@ -1,5 +1,6 @@
 package ru.kabor.demand.prediction.entity;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,7 +37,7 @@ public class Request {
     private String email;
 
     @Column(name = "send_date_time", nullable = false)
-    private String sendDateTime;
+    private LocalDateTime sendDateTime;
 
     @Column(nullable = false)
     private int status;

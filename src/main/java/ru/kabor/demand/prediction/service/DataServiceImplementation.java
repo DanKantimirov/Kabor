@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 import javax.annotation.PostConstruct;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -186,14 +187,17 @@ public class DataServiceImplementation implements DataService {
     /** Put one file into storage folder
      * @throws DataServiceException*/
 	@Override
-	public void putFile(MultipartFile file) throws DataServiceException {
+	public String putFile(MultipartFile file) throws DataServiceException {
 		//TODO: add insert information to database
 		try {
             if (file.isEmpty()) {
             	LOG.error("File is empty: " + file.getOriginalFilename());
                 throw new DataServiceException("File is empty: " + file.getOriginalFilename());
             }
-            Files.copy(file.getInputStream(), this.inputFolderLocation.resolve(file.getOriginalFilename()));
+			String fileName = RandomStringUtils.randomAlphanumeric(32) +
+					file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf('.'));
+            Files.copy(file.getInputStream(), this.inputFolderLocation.resolve(fileName));
+			return fileName;
         } catch (IOException e) {
         	LOG.error("Can't save file:  " + file.getOriginalFilename() + " " + e.toString());
 			throw new DataServiceException("Can't save file:  " + file.getOriginalFilename() + " " + e.toString());

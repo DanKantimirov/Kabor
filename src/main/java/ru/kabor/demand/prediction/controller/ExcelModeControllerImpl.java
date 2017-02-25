@@ -115,8 +115,8 @@ public class ExcelModeControllerImpl implements ExcelModeController {
 		try {
 			Request reqEnt = requestService.addNewRequest(file, request.getParameterMap());
 			emailSender.sendMessageRequestAdded((long) reqEnt.getId());
-			redirectAttributes.addFlashAttribute("message", "Your file is valid and we have already started forecast processing!"
-			+ "You will receive a notification to email when the process is complete.");
+			redirectAttributes.addFlashAttribute("message", "We have already started forecast processing!"
+			+ " You will receive a notification to email when the process is complete.");
 		} catch (InvalidHeaderException exception) {
 			redirectAttributes.addFlashAttribute("message", "Your file format is invalid. Check file columns name.");
 		} catch (InvalidFormatException exception) {

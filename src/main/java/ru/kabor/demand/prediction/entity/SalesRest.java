@@ -3,7 +3,6 @@ package ru.kabor.demand.prediction.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.kabor.demand.prediction.entity.Request;
 
 import javax.persistence.*;
 import java.time.LocalDate;

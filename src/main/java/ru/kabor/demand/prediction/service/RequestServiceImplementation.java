@@ -1,16 +1,5 @@
 package ru.kabor.demand.prediction.service;
 
-import static ru.kabor.demand.prediction.utils.ConstantUtils.PARSE_EXCEL_SALES_REST_LIST_SIZE;
-import static ru.kabor.demand.prediction.utils.ExcelUtils.readValueFromXls;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -21,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import ru.kabor.demand.prediction.entity.ForecastParameter;
 import ru.kabor.demand.prediction.entity.Request;
 import ru.kabor.demand.prediction.entity.SalesRest;
@@ -32,6 +20,19 @@ import ru.kabor.demand.prediction.utils.ExcelUtils;
 import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static ru.kabor.demand.prediction.utils.ConstantUtils.PARSE_EXCEL_SALES_REST_LIST_SIZE;
+import static ru.kabor.demand.prediction.utils.ExcelUtils.readValueFromXls;
 
 @Service
 public class RequestServiceImplementation implements RequestService {
@@ -55,14 +56,15 @@ public class RequestServiceImplementation implements RequestService {
     @Override
     public Request createRequest(Map<String, String[]> reqParams, MultipartFile file) throws DataServiceException {
         LOG.debug("prepare request for saving to db ");
-        java.util.Date currentTime = new java.util.Date();
+
+        String fileName = dataService.putFile(file);
         
         Request request = new Request();
-        request.setDocumentPath(file.getOriginalFilename());
+        request.setDocumentPath(fileName);
         request.setEmail(reqParams.get("inputEmail")[0]);
-        request.setStatus(ConstantUtils.REQUEST_PREPEARED);
-        request.setSendDateTime(simpleDateTimeFormat.format(currentTime));
-        request = requestRepository.save(request);
+        request.setStatus(ConstantUtils.REQUEST_ADDED);
+        request.setSendDateTime(LocalDateTime.now());
+        request = requestRepository.saveAndFlush(request);
         
         ForecastParameter forecastParameter = new ForecastParameter();
         String defaultSettingsInput = reqParams.get("defaultSettingsInput")[0];
@@ -80,10 +82,6 @@ public class RequestServiceImplementation implements RequestService {
         }
         forecastParameter.setRequest(request);											//Try to make it in one transaction with creating request
         forecastParameterRepository.save(forecastParameter);
-
-        dataService.putFile(file);
-        request.setStatus(ConstantUtils.REQUEST_ADDED);
-        requestRepository.saveAndFlush(request);
 
         LOG.debug("new request successfully saved to db");
 
@@ -107,47 +105,60 @@ public class RequestServiceImplementation implements RequestService {
         //we have not processed requests
         if (request != null) {
             LOG.debug("got request for parsing. preparing");
-            Path file = dataService.getStorageOutputFilePath(request.getDocumentPath());
-            Workbook workbook = WorkbookFactory.create(file.toFile());
 
-            Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> iterator = sheet.rowIterator();
-            int rowCounter = 0;
-            List<SalesRest> saleRestList = new ArrayList<>();
+            try {
+                Path file = dataService.getStorageInputFilePath(request.getDocumentPath());
+                Workbook workbook = WorkbookFactory.create(file.toFile());
 
-            while(iterator.hasNext()) {
-                LOG.debug("processing workbook. row #%d", rowCounter);
+                Sheet sheet = workbook.getSheetAt(0);
+                Iterator<Row> iterator = sheet.rowIterator();
+                int rowCounter = 0;
+                List<SalesRest> saleRestList = new ArrayList<>();
 
-                //ignore header
-                if (rowCounter == 0) {
-                    rowCounter++;
-                    continue;
+                while (iterator.hasNext()) {
+                    LOG.debug("processing workbook. row #%d", rowCounter);
+
+                    Row row = iterator.next();
+
+                    //ignore header
+                    if (rowCounter == 0) {
+                        rowCounter++;
+                        continue;
+                    }
+
+                    SalesRest saleRest = new SalesRest();
+                    saleRest.setRequest(request);
+                    saleRest.setWhsId(Integer.parseInt(readValueFromXls(workbook, row, 1)));
+                    saleRest.setArtId(Integer.parseInt(readValueFromXls(workbook, row, 2)));
+                    //check work with date and parse locales
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+                    saleRest.setDayId(LocalDate.parse(readValueFromXls(workbook, row, 3), formatter));
+                    saleRest.setSaleQnty(Double.parseDouble(readValueFromXls(workbook, row, 4)));
+                    saleRest.setRestQnty(Double.parseDouble(readValueFromXls(workbook, row, 5)));
+
+                    saleRestList.add(saleRest);
+
+                    if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {
+                        LOG.debug("salesRest batch ready. saving it to db");
+                        salesRestService.storeBathSalesRest(saleRestList);
+                        saleRestList.clear();
+                    }
                 }
-
-                Row row = iterator.next();
-
-                SalesRest saleRest = new SalesRest();
-                saleRest.setRequest(request);
-                saleRest.setWhsId(Integer.parseInt(readValueFromXls(workbook, row, 1)));
-                saleRest.setArtId(Integer.parseInt(readValueFromXls(workbook, row, 2)));
-                //check work with date and parse locales
-                saleRest.setDayId(LocalDate.parse(readValueFromXls(workbook, row, 3)));
-                saleRest.setSaleQnty(Double.parseDouble(readValueFromXls(workbook, row, 4)));
-                saleRest.setRestQnty(Double.parseDouble(readValueFromXls(workbook, row, 5)));
-
-                saleRestList.add(saleRest);
-
-                if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {
-                    LOG.debug("salesRest batch ready. saving it to db");
+                if (saleRestList.size() > 0) {
                     salesRestService.storeBathSalesRest(saleRestList);
-                    saleRestList.clear();
                 }
+                workbook.close();
+
+                request.setStatus(ConstantUtils.REQUEST_PROCESSED);
+                requestRepository.saveAndFlush(request);
+
+                LOG.debug("all rows request #%d successfully savedto db", request.getId());
+
+            } catch (Exception exception) {
+                request.setStatus(ConstantUtils.IMPORT_ERROR);
+                requestRepository.saveAndFlush(request);
+                throw exception;
             }
-            if (saleRestList.size() > 0) {
-                salesRestService.storeBathSalesRest(saleRestList);
-            }
-            workbook.close();
-            LOG.debug("all rows request #%d successfully savedto db", request.getId());
         }
         LOG.debug("request parse procedure finished");
     }

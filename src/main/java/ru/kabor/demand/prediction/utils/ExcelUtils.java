@@ -97,7 +97,7 @@ public class ExcelUtils {
 			cellValue = cell.getStringCellValue();
 			break;
 		case Cell.CELL_TYPE_NUMERIC:
-			if ( !dateFormat.equals(null) && HSSFDateUtil.isCellDateFormatted(cell)) {
+			if ( dateFormat != null && HSSFDateUtil.isCellDateFormatted(cell)) {
 				Date cellDate = cell.getDateCellValue();
 				if (cellDate != null) {
 					cellValue = dateFormat.format(cellDate);

@@ -25,9 +25,14 @@ public interface DataService {
 	/** If folder for keeping excel doesn't exists it creates that method
 	 * @throws DataServiceException*/
     void sturpUpFileStorage() throws DataServiceException;
-    /** Put one file into storage folder
-     * @throws DataServiceException*/
-    void putFile(MultipartFile file) throws DataServiceException;
+
+    /**
+     * Put one file into storage folder
+     * @param file
+     * @return
+     * @throws DataServiceException
+     */
+    String putFile(MultipartFile file) throws DataServiceException;
     /** Get path for file in input storage folder*/
     Path getStorageInputFilePath(String filename);
     /** Get path for file in output storage folder*/

@@ -55,14 +55,11 @@ public class StorageFolderReader {
 
 						requestService.importRawRequest();
 
-						// read v_request where status = 0;
-						// get just 1 request
-						// parse excel
 						// send param to R methods
 						// get result and make new Excel
-						//try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception TODO: decomment
+						try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception TODO: decomment
 						LOG.debug("demon sleep");
-						try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
+						//try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
 					} catch (Exception e) {
 						LOG.error("ERROR in StorageFolderReader" + e.toString());
 					}
