@@ -52,7 +52,7 @@ public class StorageFolderReader {
 						LOG.debug("demon sleep");
 						//try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
 					} catch (Exception e) {
-						LOG.error("ERROR in StorageFolderReader" + e.toString());
+						LOG.error("ERROR in StorageFolderReader: " + e.toString());
 					}
 				}
 			});
