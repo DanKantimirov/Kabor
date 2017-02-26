@@ -15,8 +15,6 @@ public interface DataRepository {
 	SqlRowSet getSalesMultiple(RequestForecastParameterMultiple forecastParameters);
 	String getForecastFile(ResponceForecast responceForecast) throws Exception;
 	String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws Exception;
-    /** Get available document for processing*/
-    String getAvailableDocument();
     String getEmailByRequestId(Long requestId);
     String getResponseTextByRequestId(Long requestId);
     String getAttachmentPathByRequestId(Long requestId);

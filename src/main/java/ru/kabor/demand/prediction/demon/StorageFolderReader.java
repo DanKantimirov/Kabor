@@ -5,16 +5,14 @@ import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.annotation.PostConstruct;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import ru.kabor.demand.prediction.service.DataService;
 import ru.kabor.demand.prediction.service.RequestService;
 
 @Component
@@ -24,8 +22,6 @@ public class StorageFolderReader {
 	private Integer readerPoolSize;
 	@Value("${storage.delayThreadTimeout}")
 	private Integer delayThreadTimeout;
-	@Autowired
-	private DataService dataService;
 
 	@Autowired
 	RequestService requestService;
@@ -49,15 +45,10 @@ public class StorageFolderReader {
 			es.submit(() -> {
 				while (true) {
 					try {
-						System.out.println(this.dataService.getAvailableDocument());
 						System.out.println(("The time is now:" + dateFormat.format(new Date())));
 						LOG.debug("demon awoke");
-
 						requestService.importRawRequest();
-
-						// send param to R methods
-						// get result and make new Excel
-						try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception TODO: decomment
+						try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception
 						LOG.debug("demon sleep");
 						//try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
 					} catch (Exception e) {

@@ -11,7 +11,7 @@ import org.imgscalr.Scalr.Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
-import ru.kabor.demand.prediction.service.RequestServiceImplementation;
+import ru.kabor.demand.prediction.service.RequestServiceImpl;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
 import javax.imageio.ImageIO;
@@ -26,17 +26,16 @@ import java.util.List;
 
 public class ExcelUtils {
 
-	private static final Logger LOG = LoggerFactory.getLogger(RequestServiceImplementation.class);
+	private static final Logger LOG = LoggerFactory.getLogger(RequestServiceImpl.class);
 
 	/** List for validating csv headers*/
 	public static List<String> validHeaders = new ArrayList<>();
 
 	static {
-		validHeaders.add(0, "id");
-		validHeaders.add(1, "whs_id");
-		validHeaders.add(2, "art_id");
-		validHeaders.add(3, "day_id");
-		validHeaders.add(4, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
+		validHeaders.add(0, "whs_id");
+		validHeaders.add(1, "art_id");
+		validHeaders.add(2, "day_id");
+		validHeaders.add(3, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
 	}
 
 	/** Validation csv file headers
@@ -175,7 +174,7 @@ public class ExcelUtils {
 		} else {
 			result = String.format("%.2f", d);
 		}
-		result = result.replace(".", ",");
+		result = result.replace(",", ".");
 		return result;
 	}
 	

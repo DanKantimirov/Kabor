@@ -11,9 +11,9 @@ import java.util.List;
 
 
 @Service
-public class SalesRestServiceImplementation implements SalesRestService {
+public class SalesRestServiceImpl implements SalesRestService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RequestServiceImplementation.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RequestServiceImpl.class);
 
     @Autowired
     SalesRestRepository salesRestRepository;

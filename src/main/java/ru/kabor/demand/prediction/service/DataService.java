@@ -51,7 +51,4 @@ public interface DataService {
     Resource getStorageOutputFileAsResourse(String filename) throws DataServiceException;
     /** Deletes all files in storage*/
     void deleteAllFiles();
-    /** Get available document for processing*/
-    String getAvailableDocument();
-
 }
