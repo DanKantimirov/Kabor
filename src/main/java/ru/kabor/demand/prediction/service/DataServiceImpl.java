@@ -54,7 +54,7 @@ public class DataServiceImpl implements DataService {
 	@Override
 	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters) {
 		String whsIdBulk = forecastParameters.getWhsIdBulk();
-		String artIdBulk = forecastParameters.getArtBulk();
+		String artIdBulk = forecastParameters.getArtIdBulk();
 		String trainingStart = forecastParameters.getTrainingStart();
 		String trainingEnd = forecastParameters.getTrainingEnd();
 		

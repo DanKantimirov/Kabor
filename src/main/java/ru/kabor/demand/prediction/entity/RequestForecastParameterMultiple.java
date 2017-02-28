@@ -21,7 +21,7 @@ public class RequestForecastParameterMultiple implements Serializable {
 	@XmlElement
 	private String whsIdBulk;
 	@XmlElement
-	private String artBulk;
+	private String artIdBulk;
 	@XmlElement
 	private String trainingStart;
 	@XmlElement
@@ -40,11 +40,11 @@ public class RequestForecastParameterMultiple implements Serializable {
 		super();
 	}
 
-	public RequestForecastParameterMultiple(String whsIdBulk, String artBulk, String trainingStart, String trainingEnd,
+	public RequestForecastParameterMultiple(String whsIdBulk, String artIdBulk, String trainingStart, String trainingEnd,
 			Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType) {
 		super();
 		this.whsIdBulk = whsIdBulk;
-		this.artBulk = artBulk;
+		this.artIdBulk = artIdBulk;
 		this.trainingStart = trainingStart;
 		this.trainingEnd = trainingEnd;
 		this.forecastDuration = forecastDuration;
@@ -60,12 +60,12 @@ public class RequestForecastParameterMultiple implements Serializable {
 		this.whsIdBulk = whsIdBulk;
 	}
 
-	public String getArtBulk() {
-		return artBulk;
+	public String getArtIdBulk() {
+		return artIdBulk;
 	}
 
-	public void setArtBulk(String artBulk) {
-		this.artBulk = artBulk;
+	public void setArtIdBulk(String artIdBulk) {
+		this.artIdBulk = artIdBulk;
 	}
 
 	public String getTrainingStart() {
@@ -118,7 +118,7 @@ public class RequestForecastParameterMultiple implements Serializable {
 
 	@Override
 	public String toString() {
-		return "RequestForecastParameterMultiple [whsIdBulk=" + whsIdBulk + ", artBulk=" + artBulk + ", trainingStart="
+		return "RequestForecastParameterMultiple [whsIdBulk=" + whsIdBulk + ", artBulk=" + artIdBulk + ", trainingStart="
 				+ trainingStart + ", trainingEnd=" + trainingEnd + ", forecastDuration=" + forecastDuration
 				+ ", forecastMethod=" + forecastMethod + ", smoothType=" + smoothType + "]";
 	}

@@ -7,7 +7,7 @@
 		<meta name="description" content="Forecasting of demand"/>
 		<meta name="author" content="Kantimirov D. Boroda A."/>
 		
-		<title>Forecasting of demand by Excel file</title>
+		<title>Start forecasting</title>
 		<script src="js/jquery-3.1.1.js"></script>
 		<script src="js/jquery.validate.js"></script>
 		<script src="js/additional-methods.js"></script>
@@ -19,6 +19,12 @@
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"></link>
 		<link rel="stylesheet" href="css/demand-forecasting.css"></link>
 		
+		    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
 		
 		<script type="text/javascript">
 			jQuery().ready(function() {
@@ -68,6 +74,13 @@
 						$("#useSmoothInput").prop("disabled",false);
 					}
 				});
+				
+				<!-- Script to Activate the Carousel -->
+			    $('.carousel').carousel({
+					interval: 15000 //changes the speed
+				});
+				
+				$('#nav').localScroll({duration:800});
 			});
 			
 			
@@ -100,10 +113,10 @@
 							<a href="excelMode.html">Start forecasting</a>
 						</li>
 						<li>
-							<a href="#">About project</a>
+							<a href="aboutProject.html">About project</a>
 						</li>
 						<li>
-							<a href="#">Contact us</a>
+							<a href="contactUs.html">Contact us</a>
 						</li>
 					</ul>
 				</div>
@@ -111,6 +124,49 @@
 			</div>
 			<!-- /.container -->
 		</nav>
+		
+		<header id="myCarousel" class="carousel slide">
+			<!-- Indicators -->
+			<ol class="carousel-indicators">
+				<li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+				<li data-target="#myCarousel" data-slide-to="1"></li>
+				<li data-target="#myCarousel" data-slide-to="2"></li>
+			</ol>
+
+			<!-- Wrapper for Slides -->
+			<div class="carousel-inner">
+				<div class="item active">
+					<!-- Set the first background image using inline CSS below. -->
+					<div class="fill" style="background-image:url('http://placehold.it/1900x1080&amp;text=Slide One');"></div>
+					<div class="carousel-caption">
+						<h2>Caption 1</h2>
+					</div>
+				</div>
+				<div class="item">
+					<!-- Set the second background image using inline CSS below. -->
+					<div class="fill" style="background-image:url('http://placehold.it/1900x1080&amp;text=Slide Two');"></div>
+					<div class="carousel-caption">
+						<h2>Caption 2</h2>
+					</div>
+				</div>
+				<div class="item">
+					<!-- Set the third background image using inline CSS below. -->
+					<div class="fill" style="background-image:url('http://placehold.it/1900x1080&amp;text=Slide Three');"></div>
+					<div class="carousel-caption">
+						<h2>Caption 3</h2>
+					</div>
+				</div>
+			</div>
+
+			<!-- Controls -->
+			<a class="left carousel-control" href="#myCarousel" data-slide="prev">
+				<span class="icon-prev"></span>
+			</a>
+			<a class="right carousel-control" href="#myCarousel" data-slide="next">
+				<span class="icon-next"></span>
+			</a>
+
+		</header>
 
 			<div class="container-fluid">
 				<div class="row">
@@ -263,5 +319,18 @@
 					</div>
 				</div>
 			</div>
+			
+		<!-- Footer -->
+		<footer>
+			<div class="container">
+				<div class="row">
+					<div class="col-lg-12">
+						<p>Copyright &copy; Project Demand Forecaster 2017</p>
+					</div>
+				</div>
+				<!-- /.row -->
+			</div>
+			<!-- /.container -->
+		</footer>
 	</body>
 </html>

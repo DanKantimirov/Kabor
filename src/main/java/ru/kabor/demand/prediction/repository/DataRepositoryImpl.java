@@ -72,7 +72,7 @@ public class DataRepositoryImpl implements DataRepository{
 	public SqlRowSet getSalesMultiple(RequestForecastParameterMultiple forecastParameters) {
 		
 		String[] whsSplitted = forecastParameters.getWhsIdBulk().split(";");
-		String[] artSplitted = forecastParameters.getArtBulk().split(";");
+		String[] artSplitted = forecastParameters.getArtIdBulk().split(";");
 		List<Integer> whsList = new ArrayList<>();
 		List<Integer> artList = new ArrayList<>();
 		
