@@ -15,16 +15,16 @@
 
 		
 		<script src="js/bootstrap-datepicker.js"></script>
-		<script src="locales/bootstrap-datepicker.ru.min.js"></script>
+		<script src="locales/bootstrap-datepicker.en-GB.min.js"></script>
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"></link>
 		<link rel="stylesheet" href="css/demand-forecasting.css"></link>
 		
-		    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
+		<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+		<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
 		
 		<script type="text/javascript">
 			jQuery().ready(function() {
@@ -189,7 +189,7 @@
 									<div class="form-group">
 									  <label class="col-md-4 control-label" for="fileInput">File to upload:</label>
 									  <div class="col-md-4">
-										<input id="fileInput" name="fileInput" class="input-file btn-info required" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"></input>
+										<input id="fileInput" name="fileInput" class="input-file btn-info required" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" lang="en"></input>
 										<span class="help-block">Excel or CSV file with sales statistic</span>
 									  </div>
 									</div>
@@ -305,17 +305,6 @@
 								</fieldset>
 							</div>
 						</form>
-					</div>
-				</div>
-				
-				<!-- Downloaded files -->
-				<div class="row">
-					<div class="col-lg-12">
-						<ul>
-							<li th:each="file : ${files}">
-								<a th:href="${file}" th:text="${file}" />
-							</li>
-						</ul>
 					</div>
 				</div>
 			</div>

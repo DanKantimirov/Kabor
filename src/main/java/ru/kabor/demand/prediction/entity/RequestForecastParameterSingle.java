@@ -13,10 +13,12 @@ import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 
 @XmlRootElement
 @XmlAccessorType(javax.xml.bind.annotation.XmlAccessType.FIELD)
-public class RequestForecastParameterSingle implements Serializable{
+public class RequestForecastParameterSingle implements Serializable {
 
 	@Transient
 	private static final long serialVersionUID = -7649764838904201023L;
+	@XmlElement
+	private Integer requestId;
 	@XmlElement
 	private Integer whsId;
 	@XmlElement
@@ -34,15 +36,15 @@ public class RequestForecastParameterSingle implements Serializable{
 
 	@Transient
 	public static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MMM-dd");
-	
-	
+
 	public RequestForecastParameterSingle() {
 		super();
 	}
 
-	public RequestForecastParameterSingle(Integer whsId, Integer artId, String trainingStartDate,
+	public RequestForecastParameterSingle(Integer requestId, Integer whsId, Integer artId, String trainingStartDate,
 			String trainingEndDate, Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType) {
 		super();
+		this.requestId = requestId;
 		this.whsId = whsId;
 		this.artId = artId;
 		this.trainingStart = trainingStartDate;
@@ -50,6 +52,13 @@ public class RequestForecastParameterSingle implements Serializable{
 		this.forecastDuration = forecastDuration;
 		this.forecastMethod = forecastMethod;
 		this.smoothType = smoothType;
+	}
+
+	@Override
+	public String toString() {
+		return "RequestForecastParameterSingle [requestId=" + requestId + ", whsId=" + whsId + ", artId=" + artId
+				+ ", trainingStart=" + trainingStart + ", trainingEnd=" + trainingEnd + ", forecastDuration="
+				+ forecastDuration + ", forecastMethod=" + forecastMethod + ", smoothType=" + smoothType + "]";
 	}
 
 	public Integer getWhsId() {
@@ -72,7 +81,6 @@ public class RequestForecastParameterSingle implements Serializable{
 		this.trainingStart = trainingStart;
 	}
 
-	
 	public void setTrainingEndDate(String trainingEnd) {
 		this.trainingEnd = trainingEnd;
 	}
@@ -115,6 +123,14 @@ public class RequestForecastParameterSingle implements Serializable{
 
 	public void setSmoothType(SMOOTH_TYPE smoothType) {
 		this.smoothType = smoothType;
+	}
+
+	public Integer getRequestId() {
+		return requestId;
+	}
+
+	public void setRequestId(Integer requestId) {
+		this.requestId = requestId;
 	}
 
 }

@@ -17,7 +17,8 @@ public class RequestForecastParameterMultiple implements Serializable {
 
 	@Transient
 	private static final long serialVersionUID = 77361074742816905L;
-
+	@XmlElement
+	private Integer requestId;
 	@XmlElement
 	private String whsIdBulk;
 	@XmlElement
@@ -40,9 +41,10 @@ public class RequestForecastParameterMultiple implements Serializable {
 		super();
 	}
 
-	public RequestForecastParameterMultiple(String whsIdBulk, String artIdBulk, String trainingStart, String trainingEnd,
-			Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType) {
+	public RequestForecastParameterMultiple(Integer requestId, String whsIdBulk, String artIdBulk, String trainingStart,
+			String trainingEnd, Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType) {
 		super();
+		this.requestId = requestId;
 		this.whsIdBulk = whsIdBulk;
 		this.artIdBulk = artIdBulk;
 		this.trainingStart = trainingStart;
@@ -50,6 +52,14 @@ public class RequestForecastParameterMultiple implements Serializable {
 		this.forecastDuration = forecastDuration;
 		this.forecastMethod = forecastMethod;
 		this.smoothType = smoothType;
+	}
+
+	@Override
+	public String toString() {
+		return "RequestForecastParameterMultiple [requestId=" + requestId + ", whsIdBulk=" + whsIdBulk + ", artIdBulk="
+				+ artIdBulk + ", trainingStart=" + trainingStart + ", trainingEnd=" + trainingEnd
+				+ ", forecastDuration=" + forecastDuration + ", forecastMethod=" + forecastMethod + ", smoothType="
+				+ smoothType + "]";
 	}
 
 	public String getWhsIdBulk() {
@@ -116,11 +126,11 @@ public class RequestForecastParameterMultiple implements Serializable {
 		RequestForecastParameterMultiple.formatter = formatter;
 	}
 
-	@Override
-	public String toString() {
-		return "RequestForecastParameterMultiple [whsIdBulk=" + whsIdBulk + ", artBulk=" + artIdBulk + ", trainingStart="
-				+ trainingStart + ", trainingEnd=" + trainingEnd + ", forecastDuration=" + forecastDuration
-				+ ", forecastMethod=" + forecastMethod + ", smoothType=" + smoothType + "]";
+	public Integer getRequestId() {
+		return requestId;
 	}
 
+	public void setRequestId(Integer requestId) {
+		this.requestId = requestId;
+	}
 }

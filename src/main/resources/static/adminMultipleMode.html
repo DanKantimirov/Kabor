@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<meta name="description" content="Forecasting of demand. Аdmin multiple mode"/>
+		<meta name="author" content="Kantimirov D. Boroda A."/>
+		
+		<title>Admin multiple mode</title>
+		<script src="js/jquery-3.1.1.js"></script>
+		<script src="js/jquery.validate.js"></script>
+		<script src="js/additional-methods.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+		
+		<script src="js/bootstrap-datepicker.js"></script>
+		<script src="locales/bootstrap-datepicker.en-GB.min.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"></link>
+		<link rel="stylesheet" href="css/demand-forecasting.css"></link>
+		
+		    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+			<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+			<!--[if lt IE 9]>
+				<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+				<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+			<![endif]-->
+		
+		<script type="text/javascript">
+			function doAjax() {
+				$('#start-downloading-indicator').hide();
+				$('#start-analyzing-indicator').show();
+				$("#form-submit").hide();
+				
+				var inputRequestId=$("#requestInput").val();
+				var inputWhsIdBulk=$("#whsInputBulk").val();
+				var inputArtIdBulk=$("#artInputBulk").val();
+				var startDay=$("#dateStartInput").val();
+				var finishDay=$("#dateEndInput").val();
+				var duration=$("#predictionDaysInput").val();
+				var predictMethod = $("#predictionMethod").val();
+				var useSmooth = $("#useSmoothInput").val();
+				
+				$.ajax({
+					url : 'forecastmultiple',
+					timeout: 180000,
+					type: 'POST',
+					dataType: 'text',
+					contentType: 'application/json',
+					mimeType: 'application/json',
+									
+					data: JSON.stringify(						
+						{
+							requestId:inputRequestId,
+							whsIdBulk:inputWhsIdBulk,
+							artIdBulk:inputArtIdBulk,
+							trainingStart:startDay,
+							trainingEnd:finishDay,
+							forecastDuration:duration,
+							forecastMethod:predictMethod,
+							smoothType:useSmooth
+						}
+						
+						),
+					
+					success: function (data) {
+						$('#start-analyzing-indicator').hide();
+						$('#download-button').click(function(){
+							window.location.href='/demand/report/'+data;
+						})
+						$("#form-submit").show();
+						$('#start-downloading-indicator').show();
+						
+					},
+					
+					error: function(xhr, status, error) {
+						$('#start-downloading-indicator').hide();
+						$('#start-analyzing-indicator').hide();
+						$("#form-submit").show();
+						if(status==="timeout") {
+							alert("Timeout. Please, try again.");
+						} else {
+							alert(xhr.responseText);
+						}
+					}
+				});
+			}
+			
+		</script>
+	</head>
+	
+	<body>
+		
+		<!-- Navbar -->
+		<nav class="navbar navbar-default">
+		  <div class="container">
+			<!-- Brand and toggle get grouped for better mobile display -->
+			<div class="navbar-header">
+			  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-2">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			  </button>
+			  <a class="navbar-brand" href="#">Admin multiple mode</a>
+			</div>
+		
+			<!-- Collect the nav links, forms, and other content for toggling -->
+			<div class="collapse navbar-collapse" id="navbar-collapse-2">
+			  <ul class="nav navbar-nav navbar-left">
+				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="adminSingleMode.html">One-One</a></li>
+				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="adminMultipleMode.html">Many-Many</a></li>
+				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="excelMode.html">From Excel</a></li>
+			  </ul>
+			  <ul class="nav navbar-nav navbar-right">
+				<li><button type="button col-md-4" class="btn btn-info pull-right navbar-btn" onclick="location.href='logout'">Log out</button></li>
+			  </ul>
+			</div><!-- /.navbar-collapse -->
+		  </div><!-- /.container -->
+		</nav><!-- /.navbar -->
+		
+		<div class="container-fluid">
+			
+			<form class="form-horizontal" id="contactForm"  onsubmit="doAjax();return false;">
+				<fieldset>
+					<!-- Form Name -->
+					<legend>Forecasting of demand for many shops and many products by requestId.</legend>
+					
+					<!-- Text input-->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="requestInput">Request id</label>  
+					  <div class="col-md-4">
+					  <input id="requestInput" name="requestInput" class="form-control input-md" required="" type="number" data-bind="value:requestInput">
+					  <span class="help-block">Unique identifier of request</span>  
+					  </div>
+					</div>
+					
+					<!-- Textarea -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="whsInputBulk">Ids of shops separated by ";"</label>
+					  <div class="col-md-4">                     
+						<textarea class="form-control" id="whsInputBulk" name="whsInputBulk"></textarea>
+						<span class="help-block">For example: 11;22</span> 
+					  </div>
+					</div>
+
+					<!-- Textarea -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="artInputBulk">Ids of products separated by ";"</label>
+					  <div class="col-md-4">                     
+						<textarea class="form-control" id="artInputBulk" name="artInputBulk"></textarea>
+						<span class="help-block">For example: 111;222;333</span> 
+					  </div>
+					</div>
+
+					<!-- Text input-->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="dateStartInput">First date of analysis</label>  
+					  <div class="col-md-4">
+					 <input id="dateStartInput" name="dateStartInput" data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md" required="" type="text">
+					  <span class="help-block">First date of analysis </span>  
+					 </div>
+					</div>
+
+					<!-- Text input-->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="dateEndInput">Start date of forecasting</label>  
+					  <div class="col-md-4">
+					  <input id="dateEndInput" name="dateEndInput"  data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md" required="" type="text">
+					  <span class="help-block">First date of forecasting and the last date of analysis</span>  
+					  </div>
+					</div>
+
+					<!-- Select Basic -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
+					  <div class="col-md-4">
+						<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
+						  <option value="1">1</option>
+						  <option value="2">2</option>
+						  <option value="3">3</option>
+						  <option value="4">4</option>
+						  <option value="5">5</option>
+						  <option value="6">6</option>
+						  <option value="7">7</option>
+						  <option value="8">8</option>
+						  <option value="9">9</option>
+						  <option value="10">10</option>
+						  <option value="11">11</option>
+						  <option value="12">12</option>
+						  <option value="13">13</option>
+						  <option value="14">14</option>
+						</select>
+						<span class="help-block">Count days in forecast</span>  
+					  </div>
+					</div>
+					
+					<!-- Select Basic -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
+					  <div class="col-md-4">
+						<select id="predictionMethod" name="predictionMethod" class="form-control">
+							<option value="ARIMA_2_0_0">ARIMA_2_0_0</option>
+							<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
+							<option value="WINTER_HOLT">WINTER_HOLT</option>
+						</select>
+						<span class="help-block">Method of demand forecasting</span> 
+					  </div>
+					</div>
+					
+					<!-- Select Basic -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
+					  <div class="col-md-4">
+						<select id="useSmoothInput" name="useSmoothInput" class="form-control">
+						  <option value="YES">30% of deviation</option>
+						  <option value="NO">None</option>
+						</select>
+						<span class="help-block">Method of deleting extremums</span>  
+					  </div>
+					</div>
+					
+					<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+
+					<!-- Button -->
+					<div class="form-group">
+					   <label class="col-md-4 control-label" for="sendButton"></label> 
+						<div class="col-md-4">
+							<button id="form-submit" type="submit"  class="btn btn-primary btn-lg pull-left ">Start</button>
+						</div>
+					</div>
+				</fieldset>
+			</form>
+
+		</div>
+		
+		<div class="container-fluid" id="start-analyzing-indicator" style="display:none">
+			<div class="alert alert-info">
+				<strong>Analyzing.</strong>It may take some time.
+			</div>
+			<img src="images/ajax-loader.gif" id="start-analyzing-indicator-image"  class="img-responsive center-block alert alert-success" alt="Анализ." />
+		</div>
+		
+		<div class="container-fluid" id="start-downloading-indicator" style="display:none">
+			<label class="col-md-4 control-label" for="download-button"></label> 
+			<div class="col-md-4">
+				<button id="download-button" type="button"  class="btn btn-success btn-lg pull-left ">Download result of forecasting</button>
+			</div>
+		</div>
+		
+		<div>
+			<p></p>
+		</div>
+			
+	</body>
+</html>

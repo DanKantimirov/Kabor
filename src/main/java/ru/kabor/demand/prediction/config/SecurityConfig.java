@@ -16,9 +16,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 		http.csrf().disable()
 			.authorizeRequests()
 				.antMatchers("/css/**", "/fonts/**","/images/**","/js/**","/locales/**").permitAll()			
-			//	.antMatchers("/index.html").hasRole("USER")
-				.antMatchers("/multiple.html").hasRole("USER")
-			//	.antMatchers("/uploadForm").hasRole("USER")
+				.antMatchers("/adminSingleMode.html").hasRole("ADMINISTRATOR")
+				.antMatchers("/adminMultipleMode.html").hasRole("ADMINISTRATOR")
 				.antMatchers("/login.html","/logout").permitAll()
 				.and()
 			.logout()
@@ -32,7 +31,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
 		auth
 			.inMemoryAuthentication()
-				  .withUser("analyst").password("secret").roles("USER");
+				  .withUser("analyst").password("secret").roles("ADMINISTRATOR");
 	}
 	
 	/*private CsrfTokenRepository csrfTokenRepository() { 

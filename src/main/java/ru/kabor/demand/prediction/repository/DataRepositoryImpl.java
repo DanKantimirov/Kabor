@@ -131,6 +131,7 @@ public class DataRepositoryImpl implements DataRepository{
 		
 		for (int i = 0; i < whsArtTimelineList.size(); i++) {
 			RequestForecastParameterSingle forecastParameter = new RequestForecastParameterSingle(
+					forecastParameters.getRequestId(),
 					whsArtTimelineList.get(i).getWhsId(), 
 					whsArtTimelineList.get(i).getArtId(), 
 					forecastParameters.getTrainingStart(), 
