@@ -8,13 +8,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
-import javax.naming.TimeLimitExceededException;
 import javax.transaction.Transactional;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -22,6 +22,8 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -34,12 +36,14 @@ import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
 import ru.kabor.demand.prediction.entity.ResponceForecast;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 import ru.kabor.demand.prediction.r.RUtils;
+import ru.kabor.demand.prediction.service.DataServiceException;
 import ru.kabor.demand.prediction.utils.MultithreadingCallable;
 import ru.kabor.demand.prediction.utils.WhsArtTimelineBuilder;
 
 @org.springframework.stereotype.Repository("dataRespitory")
 @Transactional
 public class DataRepositoryImpl implements DataRepository{
+	
 	
 	@Value("${sql.querytimeout}")
 	private Integer queryTimeout;
@@ -67,10 +71,12 @@ public class DataRepositoryImpl implements DataRepository{
 	
 	private String fileSeparator = System.getProperty("file.separator");
 	
+	private static final Logger LOG = LoggerFactory.getLogger(DataRepositoryImpl.class);
+	
 	@Override
 	@Transactional
-	public SqlRowSet getSalesMultiple(RequestForecastParameterMultiple forecastParameters) {
-		
+	public SqlRowSet getSalesMultiple(RequestForecastParameterMultiple forecastParameters) throws DataServiceException {
+		Integer requestId = forecastParameters.getRequestId();
 		String[] whsSplitted = forecastParameters.getWhsIdBulk().split(";");
 		String[] artSplitted = forecastParameters.getArtIdBulk().split(";");
 		List<Integer> whsList = new ArrayList<>();
@@ -89,40 +95,65 @@ public class DataRepositoryImpl implements DataRepository{
 			artList.add(artId);
 		}
 		
-		String query = "select whs_id, f.art_id, sale_qnty, rest_qnty,day_id  from v_sales_rest f  where f.whs_id in(:listWhsIdParam)  and f.art_id in (:listArtIdParam) and f.day_id between date_format(:dayStartParam ,'%Y-%m-%d') and date_format(:dayFinishParam, '%Y-%m-%d')  order by f.whs_id, f.art_id, f.day_id";
-		
 		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("requestIdParam", requestId);
 		namedParameters.put("listWhsIdParam", whsList);
 		namedParameters.put("listArtIdParam", artList);
 		namedParameters.put("dayStartParam", forecastParameters.getTrainingStart());
 		namedParameters.put("dayFinishParam", forecastParameters.getTrainingEnd());
-
+		
+		String query = "select count(*) from v_sales_rest f  where f.whs_id in(:listWhsIdParam)  and f.art_id in (:listArtIdParam) and f.day_id between date_format(:dayStartParam ,'%Y-%m-%d') and date_format(:dayFinishParam, '%Y-%m-%d')";
 		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer countRecords = 0;
+		if(rowSet.next()){
+			countRecords = rowSet.getInt(1);
+		}
+		if(countRecords.equals(0)){
+			throw new DataServiceException("Can't find any records for that request_id:" + requestId + " whs_id_bulk:" + forecastParameters.getWhsIdBulk() + " art_id_bulk:" + forecastParameters.getArtIdBulk());
+		}
+		
+		
+		query = "select whs_id, f.art_id, sale_qnty, rest_qnty,day_id  from v_sales_rest f  where f.whs_id in(:listWhsIdParam)  and f.art_id in (:listArtIdParam) and f.day_id between date_format(:dayStartParam ,'%Y-%m-%d') and date_format(:dayFinishParam, '%Y-%m-%d')  order by f.whs_id, f.art_id, f.day_id";
+		rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
 		return rowSet;
 	}
 	
 	
 	@Override
 	@Transactional
-	public SqlRowSet getSales(RequestForecastParameterSingle forecastParameters) {
+	public SqlRowSet getSales(RequestForecastParameterSingle forecastParameters) throws DataServiceException {
+		Integer requestId = forecastParameters.getRequestId();
 		Integer whsId = forecastParameters.getWhsId();
 		Integer artId = forecastParameters.getArtId();
 		String trainingStart = forecastParameters.getTrainingStart();
 		String trainingEnd = forecastParameters.getTrainingEnd();
 		
+		//Check existence that request_id, whs_id and art_id
+		
 		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("requestIdParam", requestId);
 		namedParameters.put("whsIdParam", whsId);
 		namedParameters.put("artIdParam", artId);
 		namedParameters.put("dayStartParam", trainingStart);
 		namedParameters.put("dayFinishParam", trainingEnd);
 		
-		String query = "select whs_id, f.art_id, sale_qnty, rest_qnty,day_id from v_sales_rest f where f.whs_id = :whsIdParam  and f.art_id = :artIdParam and f.day_id between date_format(:dayStartParam , '%Y-%m-%d') and date_format(:dayFinishParam , '%Y-%m-%d') order by f.art_id, f.day_id";
+		String query = "select count(*) from v_sales_rest f where f.request_id = :requestIdParam and  f.whs_id = :whsIdParam  and f.art_id = :artIdParam and f.art_id = :artIdParam and f.day_id between date_format(:dayStartParam , '%Y-%m-%d') and date_format(:dayFinishParam , '%Y-%m-%d')";
 		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer countRecords = 0;
+		if(rowSet.next()){
+			countRecords = rowSet.getInt(1);
+		}
+		if(countRecords.equals(0)){
+			throw new DataServiceException("Can't find any records for that request_id:" + requestId + " whs_id:" + whsId + " art_id:" + artId);
+		}
+		
+		query = "select whs_id, f.art_id, sale_qnty, rest_qnty,day_id from v_sales_rest f where f.request_id = :requestIdParam and  f.whs_id = :whsIdParam and f.art_id = :artIdParam and f.day_id between date_format(:dayStartParam , '%Y-%m-%d') and date_format(:dayFinishParam , '%Y-%m-%d') order by f.art_id, f.day_id";
+		rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
 		return rowSet;
 	}
 	
 	@Override
-	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters, SqlRowSet salesRowSet) throws Exception {
+	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
 		List<ResponceForecast> result = new ArrayList<>();
 		List<WhsArtTimeline> whsArtTimelineList = WhsArtTimelineBuilder.buildWhsArtTimelineList(salesRowSet);
 		//create parallel call
@@ -148,12 +179,17 @@ public class DataRepositoryImpl implements DataRepository{
 		try {
 			executorService.awaitTermination(200, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			throw new TimeLimitExceededException("Из R долго не поступают ответы");
+			throw new DataServiceException("R is not answerring too long");
 		}
 		
 		for(Future<ResponceForecast> future: resultList){
-			ResponceForecast responce =  future.get();
-			result.add(responce);
+			ResponceForecast responce;
+			try {
+				responce = future.get();
+				result.add(responce);
+			} catch (InterruptedException | ExecutionException e) {
+				LOG.error("Getting forecast result exception: " + e.toString());
+			}
 		}
 		
 		return result;
@@ -162,15 +198,23 @@ public class DataRepositoryImpl implements DataRepository{
 
 	
 	@Override
-	public ResponceForecast getForecast(RequestForecastParameterSingle forecastParameters, SqlRowSet salesRowSet) throws Exception {
+	public ResponceForecast getForecast(RequestForecastParameterSingle forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
 		ResponceForecast result = new ResponceForecast();
 		WhsArtTimeline whsArtTimeline = WhsArtTimelineBuilder.buildWhsArtTimeline(salesRowSet);
-		result = rUtils.makePrediction(forecastParameters, whsArtTimeline);
+		if(whsArtTimeline.getTimeMoments().size()==0){
+			throw new DataServiceException("Can't find sales for that request");
+		}
+		try {
+			result = rUtils.makePrediction(forecastParameters, whsArtTimeline);
+		} catch (Exception e) {
+			LOG.error("Getting forecast result exception: " + e.toString());
+			throw new DataServiceException(e.toString());
+		}
 		return result;
 	}
 
 	@Override
-	public String getForecastFile(ResponceForecast responceForecast) throws Exception {
+	public String getForecastFile(ResponceForecast responceForecast) throws DataServiceException {
 		FileOutputStream out = null;
 		Workbook book = null;
 		String fullFilePath = "";
@@ -245,7 +289,7 @@ public class DataRepositoryImpl implements DataRepository{
 			
 			book.write(out);
 		} catch (Exception e) {
-			throw new Exception("Can't build excel file" + e);
+			throw new DataServiceException("Can't build excel file" + e);
 		} finally {
 			if (out != null) {
 				try {
@@ -266,7 +310,7 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 	
 	@Override
-	public String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws Exception {
+	public String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws DataServiceException {
 		FileOutputStream out = null;
 		Workbook book = null;
 		String fullFilePath = "";
@@ -350,7 +394,7 @@ public class DataRepositoryImpl implements DataRepository{
 			out = new FileOutputStream(new File(fullFilePath),false);
 			book.write(out);
 		} catch (Exception e) {
-			throw new Exception("Can't build excel file" + e);
+			throw new DataServiceException("Can't build excel file:" + e);
 		} finally {
 			if (out != null) {
 				try {

@@ -15,10 +15,10 @@ import ru.kabor.demand.prediction.entity.ResponceForecast;
 @Service
 public interface DataService {
 	/** Forecast for inner database*/
-	ResponceForecast getForecastSingle(RequestForecastParameterSingle forecastParameters);
-	List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters);
-	String getForecastFileSingle(ResponceForecast responceForecast) throws Exception;
-	String getForecastFileMultiple(List<ResponceForecast>  responceForecastList) throws Exception;
+	ResponceForecast getForecastSingle(RequestForecastParameterSingle forecastParameters) throws DataServiceException;
+	List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters) throws DataServiceException;
+	String getForecastFileSingle(ResponceForecast responceForecast) throws DataServiceException;
+	String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws DataServiceException;
 	
 	/** Forecast for sending excelFiles */
 	

@@ -14,13 +14,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
@@ -29,6 +30,7 @@ import ru.kabor.demand.prediction.service.DataService;
 import ru.kabor.demand.prediction.service.DataServiceException;
 
 @RestController
+@Secured("ADMINISTRATOR")
 public class DatabaseModeControllerImpl implements DatabaseModeController {
 	
 	@Autowired
@@ -43,36 +45,55 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
 	 * @throws Exception*/
 	@Override
 	@RequestMapping(value = "/forecastsingle",consumes=MediaType.APPLICATION_JSON_VALUE )
-	public @ResponseBody String getForecastSingle(@RequestBody RequestForecastParameterSingle forecastParameterSingle) throws Exception {
-		ResponceForecast forecastResponse =  dataService.getForecastSingle(forecastParameterSingle);
-		String filePath = dataService.getForecastFileSingle(forecastResponse);
-		return filePath;
+	public @ResponseBody String getForecastSingle(@RequestBody RequestForecastParameterSingle forecastParameterSingle, 
+			HttpServletRequest request,
+			HttpServletResponse response,
+    		RedirectAttributes redirectAttributes) {
+		ResponceForecast forecastResponse;
+		try {
+			forecastResponse = dataService.getForecastSingle(forecastParameterSingle);
+			String filePath = dataService.getForecastFileSingle(forecastResponse);
+			return filePath;
+		} catch (DataServiceException e) {
+			LOG.error(e.toString());
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return e.toString();
+		}
 	}
 	
 	/** Create forecast for many shops and many SKUs
 	 * @throws Exception*/
 	@Override
 	@RequestMapping(value = "/forecastmultiple",consumes=MediaType.APPLICATION_JSON_VALUE )
-	public String getForecastMultiple(@RequestBody RequestForecastParameterMultiple forecastParameterMultiple) throws Exception {
-		List<ResponceForecast> forecastResponse =  dataService.getForecastMultiple(forecastParameterMultiple);
-		String filePath = dataService.getForecastFileMultiple(forecastResponse);
-		return filePath;
+	public String getForecastMultiple(@RequestBody RequestForecastParameterMultiple forecastParameterMultiple,
+			HttpServletRequest request,
+			HttpServletResponse response,
+    		RedirectAttributes redirectAttributes){
+		try {
+			List<ResponceForecast> forecastResponse = dataService.getForecastMultiple(forecastParameterMultiple);
+			String filePath = dataService.getForecastFileMultiple(forecastResponse);
+			return filePath;
+		} catch (DataServiceException e) {
+			LOG.error(e.toString());
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return e.toString();
+		}
+
 	}
 	
 	/** Return link to Excel with result
+	 * @throws IOException 
 	 * @throws DataServiceException */
-	@RequestMapping("/report/{fileName:.+}")
-    public void downloadPDFResource( HttpServletRequest request, 
-                                     HttpServletResponse response, 
-                                     @PathVariable("fileName") String fileName) throws DataServiceException 
-    {
+	@RequestMapping(value = "/report/{fileName:.+}", method = RequestMethod.GET)
+    public void downloadPDFResource(@PathVariable("fileName") String fileName, 
+    		HttpServletRequest request,
+			HttpServletResponse response,
+    		RedirectAttributes redirectAttributes){
         Path file = Paths.get(outputFolderLocation, fileName);
-        if (Files.exists(file)) 
-        {
+        if (Files.exists(file)){
             response.setContentType("application/vnd.ms-excel");
             response.addHeader("Content-Disposition", "attachment; filename="+fileName);
-            try
-            {
+            try {
                 Files.copy(file, response.getOutputStream());
                 response.getOutputStream().flush();
             } 
@@ -80,20 +101,13 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
             	LOG.warn("Some problems with IE");
             }
         } else{
-        	throw new DataServiceException("Can't find file:" + fileName);
+        	LOG.error("Can't find file:" + fileName);
+        	try {
+				response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Can't find file:" + fileName);
+			} catch (IOException e) {
+				LOG.error(e.toString());
+			}
         }
         
     }
-	
-	/** Handle all exceptions*/
-	@ExceptionHandler(Exception.class)
-	public ModelAndView handleError(HttpServletRequest req, Exception ex) {
-		LOG.error("Request: " + req.getRequestURL() + " raised " + ex);
-		ModelAndView mav = new ModelAndView();
-		mav.addObject("exception", ex);
-		mav.addObject("url", req.getRequestURL());
-		mav.setViewName("error");
-		return mav;
-	}
-
 }

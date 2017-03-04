@@ -52,7 +52,7 @@ public class DataServiceImpl implements DataService {
 	}
 	
 	@Override
-	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters) {
+	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters) throws DataServiceException {
 		String whsIdBulk = forecastParameters.getWhsIdBulk();
 		String artIdBulk = forecastParameters.getArtIdBulk();
 		String trainingStart = forecastParameters.getTrainingStart();
@@ -60,11 +60,11 @@ public class DataServiceImpl implements DataService {
 		
 		if (whsIdBulk == null || whsIdBulk.trim().equals("")) {
 			LOG.error("whs_id can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("whs_id не может быть пустым");
+			throw new DataServiceException("whs_id can't be empty");
 		}
 		if (artIdBulk == null || artIdBulk.trim().equals("")) {
 			LOG.error("art_id can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("art_id не может быть пустым");
+			throw new DataServiceException("art_id can't be empty");
 		}
 		whsIdBulk = whsIdBulk.trim();
 		artIdBulk = artIdBulk.trim();
@@ -73,30 +73,30 @@ public class DataServiceImpl implements DataService {
         Matcher matcherForCheck = patternForCheck.matcher(whsIdBulk);  
 		
 		if(!matcherForCheck.matches()){
-			throw new IllegalArgumentException("в whs_id доступны символы только (0-9 или ;)");
+			throw new DataServiceException("only (0-9 or ;) are allowed for whs_id");
 		}
 		
         matcherForCheck = patternForCheck.matcher(artIdBulk);  
 		
 		if(!matcherForCheck.matches()){
-			throw new IllegalArgumentException("в art_id доступны символы только (0-9 или ;)");
+			throw new DataServiceException("only (0-9 or ;) are allowed for art_id");
 		}
 		
 		if (trainingStart == null || trainingStart.trim().equals("")) {
-			LOG.error("training_start can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("training_start не может быть пустым");
+			LOG.error("start of training can't be empty" + forecastParameters.toString());
+			throw new DataServiceException("start of training can't be empty");
 		}
 		if (trainingEnd == null || trainingEnd.trim().equals("")) {
-			LOG.error("training_end can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("training_end не может быть пустым");
+			LOG.error("start of forecasting can't be empty" + forecastParameters.toString());
+			throw new DataServiceException("start of forecasting can't be empty");
 		}
 		
 		LocalDate startDate = LocalDate.parse(trainingStart);
 		LocalDate endDate = LocalDate.parse(trainingEnd);
 		
 		if(!startDate.isBefore(endDate)){
-			LOG.error("training_end is before training_start" + forecastParameters.toString());
-			throw new IllegalArgumentException("Дата начала прогноза раньше даты начала анализа");
+			LOG.error("start of forecasting is before start of training" + forecastParameters.toString());
+			throw new DataServiceException("start of forecasting is before start of training");
 		}
 		
 		List<ResponceForecast> forecastList = null;
@@ -104,42 +104,48 @@ public class DataServiceImpl implements DataService {
 			SqlRowSet salesRowSet = dataRepository.getSalesMultiple(forecastParameters);
 			forecastList = dataRepository.getForecastMultiple(forecastParameters, salesRowSet);
 		} catch (Exception e) {
-			throw new UnsupportedOperationException(e.toString());
+			throw new DataServiceException(e.toString());
 		}
 		return forecastList;
 	}
 
 	@Override
-	public ResponceForecast getForecastSingle(RequestForecastParameterSingle forecastParameters){
+	public ResponceForecast getForecastSingle(RequestForecastParameterSingle forecastParameters) throws DataServiceException{
 
+		Integer requestId = forecastParameters.getRequestId();
 		Integer whsId = forecastParameters.getWhsId();
 		Integer artId = forecastParameters.getArtId();
 		String trainingStart = forecastParameters.getTrainingStart();
 		String trainingEnd = forecastParameters.getTrainingEnd();
+		
+		if (requestId == null) {
+			LOG.error("request_id can't be empty" + forecastParameters.toString());
+			throw new DataServiceException("request_id can't be empty");
+		}
 
 		if (whsId == null) {
 			LOG.error("whs_id can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("whs_id не может быть пустым");
+			throw new DataServiceException("whs_id can't be empty");
 		}
 		if (artId == null) {
 			LOG.error("art_id can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("art_id не может быть пустым");
+			throw new DataServiceException("art_id can't be empty");
 		}
 		if (trainingStart == null || trainingStart.trim().equals("")) {
 			LOG.error("training_start can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("training_start не может быть пустым");
+			throw new DataServiceException("training_start can't be empty");
 		}
 		if (trainingEnd == null || trainingEnd.trim().equals("")) {
 			LOG.error("training_end can't be empty" + forecastParameters.toString());
-			throw new IllegalArgumentException("training_end не может быть пустым");
+			throw new DataServiceException("training_end can't be empty");
 		}
 		
 		LocalDate startDate = LocalDate.parse(trainingStart);
 		LocalDate endDate = LocalDate.parse(trainingEnd);
 		
 		if(!startDate.isBefore(endDate)){
-			LOG.error("training_end is before training_start" + forecastParameters.toString());
-			throw new IllegalArgumentException("Дата начала прогноза раньше даты начала анализа");
+			LOG.error("Start date of forecasting is earlier than First date of analysis: " + forecastParameters.toString());
+			throw new DataServiceException("Start date of forecasting is earlier than First date of analysis");
 		}
 		
 		ResponceForecast forecast;
@@ -147,19 +153,19 @@ public class DataServiceImpl implements DataService {
 			SqlRowSet salesRowSet = dataRepository.getSales(forecastParameters);
 			forecast = dataRepository.getForecast(forecastParameters,salesRowSet);
 		} catch (Exception e) {
-			throw new UnsupportedOperationException(e.toString());
+			throw new DataServiceException(e.toString());
 		}
 		return forecast;
 	}
 
 	@Override
-	public String getForecastFileSingle(ResponceForecast responceForecast) throws Exception {
+	public String getForecastFileSingle(ResponceForecast responceForecast) throws DataServiceException  {
 		String result = dataRepository.getForecastFile(responceForecast);
 		return result;
 	}
 
 	@Override
-	public String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws Exception {
+	public String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws DataServiceException {
 		String result = dataRepository.getForecastFileMultiple(responceForecastList);
 		return result;
 	}

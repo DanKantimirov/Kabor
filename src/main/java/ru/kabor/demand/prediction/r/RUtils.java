@@ -55,7 +55,10 @@ public class RUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RUtils.class);
 
-	public ResponceForecast makePrediction(RequestForecastParameterSingle forecastParameters,	WhsArtTimeline whsArtTimeline) throws Exception {
+	public ResponceForecast makePrediction(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+		if (whsArtTimeline.getTimeMoments().size() < 3) {
+			return null;
+		}
 		WhsArtTimeline whsArtTimelineSlope = this.makeWhsArtTimelineSlope(whsArtTimeline,forecastParameters.getSmoothType());
 		switch(forecastParameters.getForecastMethod()){
 			case WINTER_HOLT:{
