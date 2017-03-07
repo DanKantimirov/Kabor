@@ -16,13 +16,7 @@ import javax.persistence.Table;
 
 import org.hibernate.validator.constraints.Email;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "v_request")
 public class Request {
@@ -56,4 +50,118 @@ public class Request {
 
     @OneToOne(mappedBy = "request", targetEntity = ForecastParameter.class, cascade = CascadeType.ALL)
     ForecastParameter forecastParameter;
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Request other = (Request) obj;
+		if (id != other.id)
+			return false;
+		return true;
+	}
+
+	public Request() {
+		super();
+	}
+
+	public Request(int id, String email, LocalDateTime sendDateTime, int status, String responseText,
+			String attachmentPath, String documentPath, Set<SalesRest> salesRest, ForecastParameter forecastParameter) {
+		super();
+		this.id = id;
+		this.email = email;
+		this.sendDateTime = sendDateTime;
+		this.status = status;
+		this.responseText = responseText;
+		this.attachmentPath = attachmentPath;
+		this.documentPath = documentPath;
+		this.salesRest = salesRest;
+		this.forecastParameter = forecastParameter;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public LocalDateTime getSendDateTime() {
+		return sendDateTime;
+	}
+
+	public void setSendDateTime(LocalDateTime sendDateTime) {
+		this.sendDateTime = sendDateTime;
+	}
+
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public String getResponseText() {
+		return responseText;
+	}
+
+	public void setResponseText(String responseText) {
+		this.responseText = responseText;
+	}
+
+	public String getAttachmentPath() {
+		return attachmentPath;
+	}
+
+	public void setAttachmentPath(String attachmentPath) {
+		this.attachmentPath = attachmentPath;
+	}
+
+	public String getDocumentPath() {
+		return documentPath;
+	}
+
+	public void setDocumentPath(String documentPath) {
+		this.documentPath = documentPath;
+	}
+
+	public Set<SalesRest> getSalesRest() {
+		return salesRest;
+	}
+
+	public void setSalesRest(Set<SalesRest> salesRest) {
+		this.salesRest = salesRest;
+	}
+
+	public ForecastParameter getForecastParameter() {
+		return forecastParameter;
+	}
+
+	public void setForecastParameter(ForecastParameter forecastParameter) {
+		this.forecastParameter = forecastParameter;
+	}
+    
+    
 }

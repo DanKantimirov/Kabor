@@ -49,6 +49,10 @@ public class ExcelUtils {
 		Row headerRow = workbook.getSheetAt(0).getRow(0);
 		List<String> requestHeaders = new ArrayList<>();
 		
+		if(headerRow == null){
+			throw new InvalidHeaderException("Excel file is empty"); 
+		}
+		
 		for(int i=0; i<validHeaders.size(); i++) {
 			requestHeaders.add(readValueFromXls(workbook, headerRow, i));
 		}
@@ -88,6 +92,9 @@ public class ExcelUtils {
 	/** Reading cell froxm Excel workbook */
 	@SuppressWarnings("deprecation")
 	public static String readValueFromXls(Workbook workbook, Row row, Integer columnNumber, SimpleDateFormat dateFormat) {
+		if (workbook == null || row == null) {
+			return null;
+		}
 		String cellValue = "";
 		Cell cell = row.getCell(columnNumber, Row.CREATE_NULL_AS_BLANK);
 		FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
