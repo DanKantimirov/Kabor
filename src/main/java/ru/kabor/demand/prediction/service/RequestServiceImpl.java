@@ -112,7 +112,6 @@ public class RequestServiceImpl implements RequestService {
 			try {
 				Path file = dataService.getStorageInputFilePath(request.getDocumentPath());
 				Workbook workbook = WorkbookFactory.create(file.toFile());
-
 				try {
 					Sheet sheet = workbook.getSheetAt(0);
 					Iterator<Row> iterator = sheet.rowIterator();
@@ -121,17 +120,24 @@ public class RequestServiceImpl implements RequestService {
 					while (iterator.hasNext()) {
 						LOG.debug("processing workbook. row #%d", rowCounter);
 						Row row = iterator.next();
-						// ignore header
-						if (rowCounter == 0) {
-							rowCounter++;
-							continue;
+						rowCounter++;
+						if (rowCounter == 1) {
+							continue;	// ignore header
 						}
 
 						SalesRest saleRest = new SalesRest();
 						saleRest.setRequest(request);
-						saleRest.setWhsId(Integer.parseInt(readValueFromXls(workbook, row, 0)));
-						saleRest.setArtId(Integer.parseInt(readValueFromXls(workbook, row, 1)));
-						saleRest.setDayId(LocalDate.parse(readValueFromXls(workbook, row, 2, simpleDateFormat), simpleDateTimeFormatter));
+						String whsId = readValueFromXls(workbook, row, 0);
+						String artId = readValueFromXls(workbook, row, 1);
+						String dayId = readValueFromXls(workbook, row, 2, simpleDateFormat);
+						if(whsId==null || whsId.trim().equals("") || artId==null || artId.trim().equals("") || dayId==null || dayId.trim().equals("")){
+							continue;	//empty string
+						}
+						
+						saleRest.setWhsId(Integer.parseInt(whsId));
+						saleRest.setArtId(Integer.parseInt(artId));
+						saleRest.setDayId(LocalDate.parse(dayId, simpleDateTimeFormatter));
+						System.out.println(saleRest.getDayId());
 						saleRest.setSaleQnty(Double.parseDouble(readValueFromXls(workbook, row, 3)));
 						saleRestList.add(saleRest);
 						if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {

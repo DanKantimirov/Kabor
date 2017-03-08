@@ -50,7 +50,6 @@ public class StorageFolderReader {
 						requestService.importRawRequest();
 						try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception
 						LOG.debug("demon sleep");
-						//try {Thread.sleep(10000000);	} catch (InterruptedException e) {} // nothing bad with that exception
 					} catch (Exception e) {
 						LOG.error("ERROR in StorageFolderReader: " + e.toString());
 					}
