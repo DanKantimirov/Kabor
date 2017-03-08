@@ -107,7 +107,9 @@ public class RequestServiceImpl implements RequestService {
 
         //we have not processed requests
         if (request != null) {
-            LOG.debug("got request for parsing. preparing");
+        	LOG.debug("Request "+request.getId()+" .Start importing record to db.");
+            request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_DATA_IMPORT);
+            requestRepository.saveAndFlush(request);
 
 			try {
 				Path file = dataService.getStorageInputFilePath(request.getDocumentPath());
@@ -118,7 +120,7 @@ public class RequestServiceImpl implements RequestService {
 					int rowCounter = 0;
 					List<SalesRest> saleRestList = new ArrayList<>();
 					while (iterator.hasNext()) {
-						LOG.debug("processing workbook. row #%d", rowCounter);
+						LOG.debug("Request "+request.getId()+ " .Processing workbook. row:"+ rowCounter);
 						Row row = iterator.next();
 						rowCounter++;
 						if (rowCounter == 1) {
@@ -137,16 +139,16 @@ public class RequestServiceImpl implements RequestService {
 						saleRest.setWhsId(Integer.parseInt(whsId));
 						saleRest.setArtId(Integer.parseInt(artId));
 						saleRest.setDayId(LocalDate.parse(dayId, simpleDateTimeFormatter));
-						System.out.println(saleRest.getDayId());
 						saleRest.setSaleQnty(Double.parseDouble(readValueFromXls(workbook, row, 3)));
 						saleRestList.add(saleRest);
 						if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {
-							LOG.debug("salesRest batch ready. saving it to db");
+							LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
 							salesRestService.storeBathSalesRest(saleRestList);
 							saleRestList.clear();
 						}
 					}
 					if (saleRestList.size() > 0) {
+						LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
 						salesRestService.storeBathSalesRest(saleRestList);
 					}
 				} finally {
@@ -154,18 +156,18 @@ public class RequestServiceImpl implements RequestService {
 						workbook.close();
 					}
 				}
-                request.setStatus(ConstantUtils.REQUEST_PROCESSED);
+                request.setStatus(ConstantUtils.REQUEST_DATA_IMPORTED);
                 requestRepository.saveAndFlush(request);
 
-                LOG.debug("all rows request #%d successfully savedto db", request.getId());
+                LOG.debug("Request "+request.getId()+" is successfully saved to db.");
 
             } catch (Exception exception) {
-                request.setStatus(ConstantUtils.IMPORT_ERROR);
+            	LOG.warn("Request "+request.getId()+" .Exception has occurred while importing records to database:" + exception.toString());
+                request.setStatus(ConstantUtils.REQUEST_DATA_IMPORT_ERROR);
                 request.setResponseText(exception.toString());
                 requestRepository.saveAndFlush(request);
                 throw exception;
             }
         }
-        LOG.debug("request parse procedure finished");
     }
 }
