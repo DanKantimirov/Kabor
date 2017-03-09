@@ -27,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import ru.kabor.demand.prediction.entity.ForecastParameter;
 import ru.kabor.demand.prediction.entity.Request;
+import ru.kabor.demand.prediction.entity.ResponceForecast;
 import ru.kabor.demand.prediction.entity.SalesRest;
 import ru.kabor.demand.prediction.repository.ForecastParameterRepository;
 import ru.kabor.demand.prediction.repository.RequestRepository;
@@ -100,12 +101,9 @@ public class RequestServiceImpl implements RequestService {
     }
 
     @Override
-    public void importRawRequest() throws IOException, InvalidFormatException {
+    public Integer importRawRequest() throws IOException, InvalidFormatException {
         LOG.debug("ready for read request for parsing from db");
-        //red one request where status 0
         Request request = requestRepository.findByStatus(ConstantUtils.REQUEST_ADDED);
-
-        //we have not processed requests
         if (request != null) {
         	LOG.debug("Request "+request.getId()+" .Start importing record to db.");
             request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_DATA_IMPORT);
@@ -158,16 +156,55 @@ public class RequestServiceImpl implements RequestService {
 				}
                 request.setStatus(ConstantUtils.REQUEST_DATA_IMPORTED);
                 requestRepository.saveAndFlush(request);
-
                 LOG.debug("Request "+request.getId()+" is successfully saved to db.");
-
-            } catch (Exception exception) {
-            	LOG.warn("Request "+request.getId()+" .Exception has occurred while importing records to database:" + exception.toString());
-                request.setStatus(ConstantUtils.REQUEST_DATA_IMPORT_ERROR);
-                request.setResponseText(exception.toString());
-                requestRepository.saveAndFlush(request);
-                throw exception;
-            }
+                return request.getId();
+                
+			} catch (Exception exception) {
+				LOG.warn("Request " + request.getId() + " .Exception has occurred while importing records to database:" + exception.toString());
+				request.setStatus(ConstantUtils.REQUEST_DATA_IMPORT_ERROR);
+				request.setResponseText(exception.toString());
+				requestRepository.saveAndFlush(request);
+				throw exception;
+			}
         }
+        return null;
     }
+
+	@Override
+	public String makeRequestPrediction(Integer requestId) throws DataServiceException {
+		LOG.debug("Request " + requestId + " . Ready for making forecast");
+		Request request = requestRepository.findOne(requestId);
+		request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_FORECASTING);
+		requestRepository.saveAndFlush(request);
+
+		List<ResponceForecast> forecastResponseList = null;
+		String filePath = null;
+		
+		try {
+			forecastResponseList = dataService.getForecastExcelMode(requestId);
+		} catch (DataServiceException exception) {
+			LOG.warn("Request " + request.getId() + " .Exception has occurred while making forecast:" + exception.toString());
+			request.setStatus(ConstantUtils.REQUEST_FORECAST_ERROR);
+			request.setResponseText(exception.toString());
+			requestRepository.saveAndFlush(request);
+			throw exception;
+		}
+
+		try {
+			filePath = dataService.getForecastFileExcelMode(forecastResponseList);
+		} catch (DataServiceException exception) {
+			LOG.warn("Request " + request.getId() + " .Exception has occurred while making excel file:" + exception.toString());
+			request.setStatus(ConstantUtils.REQUEST_FORECAST_ERROR);
+			request.setResponseText(exception.toString());
+			requestRepository.saveAndFlush(request);
+			throw exception;
+		}
+		
+		request.setAttachmentPath(filePath);
+		request.setStatus(ConstantUtils.REQUEST_FORECAST_COMPLITED);
+		request.setResponseText("Forecasting success");
+		requestRepository.saveAndFlush(request);
+		LOG.debug("Request " + requestId + " .Forecasting completed.");
+		return filePath;
+	}
 }

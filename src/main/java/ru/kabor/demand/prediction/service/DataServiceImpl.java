@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,7 +53,7 @@ public class DataServiceImpl implements DataService {
 	}
 	
 	@Override
-	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters) throws DataServiceException {
+	public List<ResponceForecast> getForecastMultipleDatabaseMode(RequestForecastParameterMultiple forecastParameters) throws DataServiceException {
 		String whsIdBulk = forecastParameters.getWhsIdBulk();
 		String artIdBulk = forecastParameters.getArtIdBulk();
 		String trainingStart = forecastParameters.getTrainingStart();
@@ -110,7 +111,7 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public ResponceForecast getForecastSingle(RequestForecastParameterSingle forecastParameters) throws DataServiceException{
+	public ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters) throws DataServiceException{
 
 		Integer requestId = forecastParameters.getRequestId();
 		Integer whsId = forecastParameters.getWhsId();
@@ -159,13 +160,13 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public String getForecastFileSingle(ResponceForecast responceForecast) throws DataServiceException  {
+	public String getForecastFileSingleDatabaseMode(ResponceForecast responceForecast) throws DataServiceException  {
 		String result = dataRepository.getForecastFile(responceForecast);
 		return result;
 	}
 
 	@Override
-	public String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws DataServiceException {
+	public String getForecastFileMultipleDatabaseMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
 		String result = dataRepository.getForecastFileMultiple(responceForecastList);
 		return result;
 	}
@@ -296,5 +297,22 @@ public class DataServiceImpl implements DataService {
 	@Override
 	public void deleteAllFiles() {
 		FileSystemUtils.deleteRecursively(this.inputFolderLocation.toFile());
+	}
+
+	@Override
+	public List<ResponceForecast> getForecastExcelMode(Integer requestId) throws DataServiceException {
+		List<ResponceForecast> responceList = new ArrayList<>();
+		List<RequestForecastParameterSingle> requestForecastParameterSingleList = dataRepository.getRequestForecastParameterSingleList(requestId);
+		for(RequestForecastParameterSingle request : requestForecastParameterSingleList){
+			ResponceForecast responce = this.getForecastSingleDatabaseMode(request);
+			responceList.add(responce);
+		}
+		return responceList;
+	}
+
+	@Override
+	public String getForecastFileExcelMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
+		String filePath = this.getForecastFileMultipleDatabaseMode(responceForecastList);
+		return filePath;
 	}
 }

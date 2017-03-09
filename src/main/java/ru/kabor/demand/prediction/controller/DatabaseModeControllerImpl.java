@@ -51,8 +51,8 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
     		RedirectAttributes redirectAttributes) {
 		ResponceForecast forecastResponse;
 		try {
-			forecastResponse = dataService.getForecastSingle(forecastParameterSingle);
-			String filePath = dataService.getForecastFileSingle(forecastResponse);
+			forecastResponse = dataService.getForecastSingleDatabaseMode(forecastParameterSingle);
+			String filePath = dataService.getForecastFileSingleDatabaseMode(forecastResponse);
 			return filePath;
 		} catch (DataServiceException e) {
 			LOG.error(e.toString());
@@ -70,8 +70,8 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
 			HttpServletResponse response,
     		RedirectAttributes redirectAttributes){
 		try {
-			List<ResponceForecast> forecastResponse = dataService.getForecastMultiple(forecastParameterMultiple);
-			String filePath = dataService.getForecastFileMultiple(forecastResponse);
+			List<ResponceForecast> forecastResponse = dataService.getForecastMultipleDatabaseMode(forecastParameterMultiple);
+			String filePath = dataService.getForecastFileMultipleDatabaseMode(forecastResponse);
 			return filePath;
 		} catch (DataServiceException e) {
 			LOG.error(e.toString());

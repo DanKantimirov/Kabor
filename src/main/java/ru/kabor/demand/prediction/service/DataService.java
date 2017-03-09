@@ -15,12 +15,14 @@ import ru.kabor.demand.prediction.entity.ResponceForecast;
 @Service
 public interface DataService {
 	/** Forecast for inner database*/
-	ResponceForecast getForecastSingle(RequestForecastParameterSingle forecastParameters) throws DataServiceException;
-	List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters) throws DataServiceException;
-	String getForecastFileSingle(ResponceForecast responceForecast) throws DataServiceException;
-	String getForecastFileMultiple(List<ResponceForecast> responceForecastList) throws DataServiceException;
+	ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters) throws DataServiceException;
+	List<ResponceForecast> getForecastMultipleDatabaseMode(RequestForecastParameterMultiple forecastParameters) throws DataServiceException;
+	String getForecastFileSingleDatabaseMode(ResponceForecast responceForecast) throws DataServiceException;
+	String getForecastFileMultipleDatabaseMode(List<ResponceForecast> responceForecastList) throws DataServiceException;
 	
 	/** Forecast for sending excelFiles */
+	List<ResponceForecast> getForecastExcelMode(Integer requestId) throws DataServiceException; 
+	String getForecastFileExcelMode(List<ResponceForecast> responceForecastList) throws DataServiceException;
 	
 	/** If folder for keeping excel doesn't exists it creates that method
 	 * @throws DataServiceException*/

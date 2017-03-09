@@ -43,26 +43,37 @@ public class ExcelUtils {
 	 * @param file
 	 * @throws Exception
      */
-	public static void validateCsvHeaders(MultipartFile file) throws InvalidHeaderException, IOException, InvalidFormatException {
+	public static void validateCsvHeaders(MultipartFile file) throws InvalidHeaderException {
 		LOG.debug("prepare validation");
-		Workbook workbook = WorkbookFactory.create(file.getInputStream());
-		Row headerRow = workbook.getSheetAt(0).getRow(0);
-		List<String> requestHeaders = new ArrayList<>();
-		
-		if(headerRow == null){
-			throw new InvalidHeaderException("Excel file is empty"); 
-		}
-		
-		for(int i=0; i<validHeaders.size(); i++) {
-			requestHeaders.add(readValueFromXls(workbook, headerRow, i));
-		}
+		Workbook workbook = null;
+		try {
+			workbook = WorkbookFactory.create(file.getInputStream());
+			Row headerRow = workbook.getSheetAt(0).getRow(0);
+			List<String> requestHeaders = new ArrayList<>();
 
-		if (!validHeaders.equals(requestHeaders)) {
-			LOG.error("Invalid header in Excel File:" + requestHeaders);
-			workbook.close();
-			throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+			if (headerRow == null) {
+				throw new InvalidHeaderException("Excel file is empty");
+			}
+
+			for (int i = 0; i < validHeaders.size(); i++) {
+				requestHeaders.add(readValueFromXls(workbook, headerRow, i));
+			}
+
+			if (!validHeaders.equals(requestHeaders)) {
+				LOG.error("Invalid header in Excel File:" + requestHeaders);
+				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+			}
+		} catch (InvalidFormatException | IOException e) {
+			throw new InvalidHeaderException("Invalid header in Excel File:" + e.toString());
+		} finally {
+			if (workbook != null) {
+				try {
+					workbook.close();
+				} catch (IOException e) {
+					LOG.error("Can't close workbook:");
+				}
+			}
 		}
-		workbook.close();
 	}
 
 	/** Find column in row with  by content*/

@@ -53,7 +53,6 @@ public class JpaConfig implements TransactionManagementConfigurer{
 	      //  config.setMaximumPoolSize(maxPoolSize);
 	        config.setConnectionTestQuery(testQuery);
 	        
-	        //config.setDriverClassName("com.mysql.jdbc.Driver");
 	        config.addDataSourceProperty("cachePrepStmts", "true");
 	        config.addDataSourceProperty("prepStmtCacheSize", "250");
 	        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");

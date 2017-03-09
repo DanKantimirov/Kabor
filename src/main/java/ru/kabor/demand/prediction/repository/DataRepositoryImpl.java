@@ -12,11 +12,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import javax.transaction.Transactional;
 
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -37,7 +37,9 @@ import ru.kabor.demand.prediction.entity.ResponceForecast;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 import ru.kabor.demand.prediction.r.RUtils;
 import ru.kabor.demand.prediction.service.DataServiceException;
+import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.MultithreadingCallable;
+import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.WhsArtTimelineBuilder;
 
 @org.springframework.stereotype.Repository("dataRespitory")
@@ -386,9 +388,8 @@ public class DataRepositoryImpl implements DataRepository{
 			sheet.autoSizeColumn(4);
 			sheet.autoSizeColumn(5);
 			
-			int randomNum = ThreadLocalRandom.current().nextInt(1, 10000000);
+			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xls";;
 			
-			fileName = randomNum + ".xls";
 			fullFilePath = outputFolderLocation + fileSeparator + fileName;
 			
 			out = new FileOutputStream(new File(fullFilePath),false);
@@ -469,5 +470,62 @@ public class DataRepositoryImpl implements DataRepository{
 			return null;
 		}
 		return null;
+	}
+
+
+	@Override
+	@Transactional
+	/** Getting list of RequestForecastParameterSingle by requestId*/
+	public List<RequestForecastParameterSingle> getRequestForecastParameterSingleList(Integer requestId) throws DataServiceException {
+		
+		List<RequestForecastParameterSingle> requestForecastParameterSingleList = new ArrayList<>();
+		
+		Integer duration = null;
+		FORECAST_METHOD forecastMethod = null;
+		SMOOTH_TYPE smoothingMethod = null;
+		
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("requestId", requestId);
+
+		String query = "select duration, forecast_method, smoothing_method from v_forecast_parameter where request_id=:requestId";
+		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer durationColumn = rowSet.findColumn("duration");
+		Integer forecastMethodColumn = rowSet.findColumn("forecast_method");
+		Integer smoothingMethodColumn = rowSet.findColumn("smoothing_method");
+		
+		if (rowSet.next()) {
+			duration = rowSet.getInt(durationColumn);
+			forecastMethod = FORECAST_METHOD.valueOf(rowSet.getString(forecastMethodColumn));
+			smoothingMethod = SMOOTH_TYPE.valueOf(rowSet.getString(smoothingMethodColumn));
+		} else{
+			throw new DataServiceException("Can find forecast parameter for reques:" + requestId);
+		}
+		
+		query = "select whs_id, art_id, min(day_id) as trainingStart, max(day_id) as trainingEnd from v_sales_rest where request_id=:requestId group by whs_id, art_id";
+		rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer whsIdColumn = rowSet.findColumn("whs_id");
+		Integer artIdColumn = rowSet.findColumn("art_id");
+		Integer trainingStartColumn = rowSet.findColumn("trainingStart");
+		Integer trainingEndColumn = rowSet.findColumn("trainingEnd");
+		
+		while(rowSet.next()){
+			
+			Integer whsId = rowSet.getInt(whsIdColumn);
+			Integer artId = rowSet.getInt(artIdColumn);
+			String trainingStart = rowSet.getString(trainingStartColumn);
+			String trainingEnd = rowSet.getString(trainingEndColumn);
+			
+			RequestForecastParameterSingle requestForecastParameterSingle = new RequestForecastParameterSingle();
+			requestForecastParameterSingle.setRequestId(requestId);
+			requestForecastParameterSingle.setWhsId(whsId);
+			requestForecastParameterSingle.setArtId(artId);
+			requestForecastParameterSingle.setTrainingStart(trainingStart);
+			requestForecastParameterSingle.setTrainingEnd(trainingEnd);
+			requestForecastParameterSingle.setForecastDuration(duration);
+			requestForecastParameterSingle.setForecastMethod(forecastMethod);
+			requestForecastParameterSingle.setSmoothType(smoothingMethod);
+			requestForecastParameterSingleList.add(requestForecastParameterSingle);
+		}
+		return requestForecastParameterSingleList;
 	}
 }

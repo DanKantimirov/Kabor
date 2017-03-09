@@ -19,4 +19,6 @@ public interface DataRepository {
     String getEmailByRequestId(Long requestId);
     String getResponseTextByRequestId(Long requestId);
     String getAttachmentPathByRequestId(Long requestId);
+    /* Excel mode */
+	List<RequestForecastParameterSingle> getRequestForecastParameterSingleList(Integer requestId) throws DataServiceException ;
 }

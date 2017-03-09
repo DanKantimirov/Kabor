@@ -32,9 +32,16 @@ public interface RequestService {
             throws InvalidHeaderException, IOException, InvalidFormatException, DataServiceException;
 
     /**
-     * read request from db and parse it values
+     * It reads request from db and parses its data to v_sales_rest
+     * @return id of proceed request, null if nothing changed
      * @throws IOException
      * @throws InvalidFormatException
      */
-    void importRawRequest() throws IOException, InvalidFormatException;
+    Integer importRawRequest() throws IOException, InvalidFormatException;
+    
+    /**
+     * It makes prediction by data presented in tables v_forecast_parameter and v_sales_rest
+     * @return path to xls file with result
+     * */
+    String makeRequestPrediction(Integer requestId) throws DataServiceException;
 }

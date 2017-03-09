@@ -1,7 +1,5 @@
 package ru.kabor.demand.prediction.demon;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -13,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import ru.kabor.demand.prediction.email.EmailSender;
 import ru.kabor.demand.prediction.service.RequestService;
 
 @Component
@@ -25,10 +24,11 @@ public class StorageFolderReader {
 
 	@Autowired
 	RequestService requestService;
+	
+	@Autowired
+	EmailSender emailSender;
 
 	private static final Logger LOG = LoggerFactory.getLogger(StorageFolderReader.class);
-
-	private static final SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
 	@PostConstruct
 	private void getCurrentTime() {
@@ -43,18 +43,25 @@ public class StorageFolderReader {
 				Thread.sleep(startupThreadDelay);
 			} catch (InterruptedException e) {} // nothing bad with that exception
 			es.submit(() -> {
-				while (true) {
+				Boolean shouldContinue = true;
+				while (shouldContinue) {
 					try {
-						System.out.println(("The time is now:" + dateFormat.format(new Date())));
 						LOG.debug("demon awoke");
-						requestService.importRawRequest();
+						Integer requestId = requestService.importRawRequest();
+						if(requestId!=null){
+							String resultFileName = requestService.makeRequestPrediction(requestId);
+							if (resultFileName != null) {
+								System.out.println(resultFileName);
+								//emailSender.sendMessageWithResult(Long.valueOf(requestId));
+							}
+						}
 						try {Thread.sleep(this.delayThreadTimeout);	} catch (InterruptedException e) {} // nothing bad with that exception
 						LOG.debug("demon sleep");
 					} catch (Exception e) {
 						LOG.error("ERROR in StorageFolderReader: " + e.toString());
 					}
 				}
-			});
+			return;});
 		}
 	}
 }
