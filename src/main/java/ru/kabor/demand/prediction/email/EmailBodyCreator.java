@@ -18,7 +18,6 @@ public class EmailBodyCreator {
 	public EmailMessageParameters getMessageRequestAddedText(Long requestId){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
-		//String filePath = this.dataRepository.getAttachmentPathByRequestId(requestId);
 
 		messageBodyBuilder.append("<p>Dear {0}.</p>");
 		messageBodyBuilder.append("<p>We have already begun to fulfill your request #{1}.</p>");		//TODO: make better realization in next sprint
@@ -36,7 +35,7 @@ public class EmailBodyCreator {
 		String filePath = this.dataRepository.getAttachmentPathByRequestId(requestId);
 		
 		messageBodyBuilder.append("<p>Dear {0}.</p>");
-		messageBodyBuilder.append("<p>Your request {1} has been successfully executed!</p>");		//TODO: make better realization in next sprint
+		messageBodyBuilder.append("<p>Your request {1} has been successfully fulfilled!</p>");			//TODO: make better realization in next sprint
 		messageBodyBuilder.append("<p>You can download forecast at <a href=\"{2}\">Demand Forecast</a>  .</p>");
 		messageBodyBuilder.append("<p>That link will be available in 48 hours.</p>");
 		

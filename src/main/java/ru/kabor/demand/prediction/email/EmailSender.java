@@ -129,7 +129,7 @@ public class EmailSender {
 		Message message = new MimeMessage(session);
 		message.setFrom(new InternetAddress(this.fullLogin));
 		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
-		message.setSubject("Susseccfully demand forecast. Request:" + requestId.toString());
+		message.setSubject("Request " + requestId.toString() + " has been added to execution queue");
 		message.setSentDate(new Date());
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
@@ -160,7 +160,7 @@ public class EmailSender {
 		Message message = new MimeMessage(session);
 		message.setFrom(new InternetAddress(this.fullLogin));
 		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
-		message.setSubject("Susseccfully demand forecast. Request:" + requestId.toString());
+		message.setSubject("Request " + requestId.toString() + " has been successfully fulfilled");
 		message.setSentDate(new Date());
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
@@ -185,11 +185,10 @@ public class EmailSender {
 		Message message = new MimeMessage(session);
 		message.setFrom(new InternetAddress(this.fullLogin));
 		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
-		message.setSubject("Failyre demand forecast. Request:" + requestId.toString());
+		message.setSubject("Request " + requestId.toString() + " has crashed");
 		message.setSentDate(new Date());
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
-
 	};
 	
 	/** Send message with error message. Error message will be taken from parameter 
@@ -214,11 +213,10 @@ public class EmailSender {
 		Message message = new MimeMessage(session);
 		message.setFrom(new InternetAddress(this.fullLogin));
 		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
-		message.setSubject("Failyre demand forecast. Request:" + requestId.toString());
+		message.setSubject("Request " + requestId.toString() + " has crashed");
 		message.setSentDate(new Date());
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
-
 	};
 
 }

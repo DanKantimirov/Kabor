@@ -3,6 +3,8 @@ package ru.kabor.demand.prediction.repository;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,8 +16,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.transaction.Transactional;
 
+import org.apache.catalina.connector.Connector;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
@@ -26,11 +30,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.EmbeddedWebApplicationContext;
+import org.springframework.boot.context.embedded.tomcat.TomcatEmbeddedServletContainer;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
-import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
 
-import ru.kabor.demand.prediction.controller.ExcelModeControllerImpl;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
 import ru.kabor.demand.prediction.entity.ResponceForecast;
@@ -71,9 +75,24 @@ public class DataRepositoryImpl implements DataRepository{
 	@Value("${storage.inputFolderLocation}")
 	private Path inputFolderLocation; 
 	
+	@Autowired
+	private EmbeddedWebApplicationContext appContext;
+	
 	private String fileSeparator = System.getProperty("file.separator");
 	
 	private static final Logger LOG = LoggerFactory.getLogger(DataRepositoryImpl.class);
+	
+	public String baseUrl;
+	
+	@PostConstruct
+	private void init() throws UnknownHostException{
+		Connector connector = ((TomcatEmbeddedServletContainer) appContext.getEmbeddedServletContainer()).getTomcat().getConnector();
+		String scheme = connector.getScheme();
+		String ip = InetAddress.getLocalHost().getHostAddress();
+		int port = connector.getPort();
+		String contextPath = appContext.getServletContext().getContextPath();
+		baseUrl = scheme + "://" + ip + ":" + port + contextPath;
+	}
 	
 	@Override
 	@Transactional
@@ -462,9 +481,7 @@ public class DataRepositoryImpl implements DataRepository{
 		if (rowSet.next()) {
 			String attachmentName = rowSet.getString(responseTextColumn);
 			if (attachmentName != null && !attachmentName.trim().equals("")) {
-				String partOne = MvcUriComponentsBuilder.fromController(ExcelModeControllerImpl.class).port(port).build().toString();
-				String partTwo = MvcUriComponentsBuilder.fromMethodName(ExcelModeControllerImpl.class, "serveFileOutput", attachmentName).port(port).build().toString();
-				String result = partOne + contextPath+ "/" + partTwo.replace(partOne, "");
+				String result = this.baseUrl + "/excelMode/filesOutput/" + attachmentName;
 				return result;
 			}
 			return null;

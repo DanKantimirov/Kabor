@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public class SalesRest {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
 
 	@Column(name = "whs_id", nullable = false)

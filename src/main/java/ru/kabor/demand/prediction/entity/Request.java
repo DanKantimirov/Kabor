@@ -22,7 +22,7 @@ import org.hibernate.validator.constraints.Email;
 public class Request {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "request_id")
     private int id;
 
