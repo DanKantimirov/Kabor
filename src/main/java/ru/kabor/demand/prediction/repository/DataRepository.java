@@ -1,5 +1,6 @@
 package ru.kabor.demand.prediction.repository;
 
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.jdbc.support.rowset.SqlRowSet;
@@ -21,4 +22,9 @@ public interface DataRepository {
     String getAttachmentPathByRequestId(Long requestId);
     /* Excel mode */
 	List<RequestForecastParameterSingle> getRequestForecastParameterSingleList(Integer requestId) throws DataServiceException ;
+	/* Storage Folder Cleaner*/
+	List<String> getAttachmentPathListByResponseTimeBeforeMoment(Date dateBound);
+	List<String> getDocumentPathListByResponseTimeBeforeMoment(Date dateBound);
+	Integer deleteRequestByResponseTimeBeforeMoment(Date dateBound);
+	
 }

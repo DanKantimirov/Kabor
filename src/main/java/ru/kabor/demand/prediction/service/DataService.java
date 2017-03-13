@@ -1,6 +1,7 @@
 package ru.kabor.demand.prediction.service;
 
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -53,4 +54,14 @@ public interface DataService {
     Resource getStorageOutputFileAsResourse(String filename) throws DataServiceException;
     /** Deletes all files in storage*/
     void deleteAllFiles();
+    /** Delete file in input storage*/
+    void deleteFileStorageInput(String filename);
+    /** Delete file in output storage*/
+    void deleteFileStorageOutput(String filename);
+    /** Get v_request.attachment_path where v_request.response_date_time before moment of time*/
+	List<String> getAttachmentPathListByResponseTimeBeforeMoment(Date dateBound);
+	/** Get v_request.document_path where v_request.response_date_time before moment of time*/
+	List<String> getDocumentPathListByResponseTimeBeforeMoment(Date dateBound);
+	/** Delete all request where v_request.response_date_time before moment of time*/
+	Integer deleteRequestByResponseTimeBeforeMoment(Date dateBound);
 }

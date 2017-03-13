@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ import ru.kabor.demand.prediction.utils.MultithreadingCallable;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.WhsArtTimelineBuilder;
 
-@org.springframework.stereotype.Repository("dataRespitory")
+@org.springframework.stereotype.Repository("dataRepository")
 @Transactional
 public class DataRepositoryImpl implements DataRepository{
 	
@@ -358,11 +359,26 @@ public class DataRepositoryImpl implements DataRepository{
 			cell = row.createCell(5);
 			cell.setCellValue("isPrediction");
 			
-			//+++++++++++++++++Main For+++++++++++++++++++++++++
-			for(int k=0;k<responceForecastList.size();k++ ){
-				ResponceForecast responceForecast= responceForecastList.get(k);
-			
-				for (int i = 0; i < responceForecast.getTimeMomentsActual().size(); i++) {
+			// +++++++++++++++++Total row count++++++++++++++++++
+			Integer predictionRowCount = responceForecastList.stream().mapToInt(e -> e.getTimeMomentsPrediction().size()).sum();
+
+			if (predictionRowCount > 65000) {
+				predictionRowCount = 65000;
+			}
+
+			Integer maxPredictionPerForecast = predictionRowCount / responceForecastList.size();
+			Integer maxActualRowPeResponseForecast = (65500 - maxPredictionPerForecast) / responceForecastList.size();
+			// +++++++++++++++++Main For+++++++++++++++++++++++++
+			for (int k = 0; k < responceForecastList.size(); k++) {
+
+				ResponceForecast responceForecast = responceForecastList.get(k);
+
+				Integer printedActual = 0;
+				Integer startI = responceForecast.getTimeMomentsActual().size() - maxActualRowPeResponseForecast;
+				if (startI < 0) {
+					startI = 0;
+				}
+				for (int i = startI; i <responceForecast.getTimeMomentsActual().size(); i++) {
 					rowNumber++;
 					row = sheet.createRow(rowNumber);
 					cell = row.createCell(0);
@@ -375,12 +391,17 @@ public class DataRepositoryImpl implements DataRepository{
 					cell.setCellValue(responceForecast.getTimeMomentsActual().get(i).getSalesQnty());
 					cell = row.createCell(4);
 					cell.setCellValue(responceForecast.getTimeMomentsSmoothed().get(i).getSalesQnty());
-					
+
 					cell = row.createCell(5);
 					cell.setCellValue(0);
+					printedActual++;
 				}
-	
+
+				Integer printedForecast=0;
 				for (int i = 0; i < responceForecast.getTimeMomentsPrediction().size(); i++) {
+					if (printedForecast > maxPredictionPerForecast) {
+						break;
+					}
 					rowNumber++;
 					row = sheet.createRow(rowNumber);
 					cell = row.createCell(0);
@@ -391,11 +412,11 @@ public class DataRepositoryImpl implements DataRepository{
 					cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getTimeMoment().toString());
 					cell = row.createCell(3);
 					cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getSalesQnty());
-	
+
 					cell = row.createCell(5);
 					cell.setCellValue(1);
+					printedForecast++;
 				}
-			
 			}
 			//+++++++++++++++++Main For+++++++++++++++++++++++++
 
@@ -544,5 +565,49 @@ public class DataRepositoryImpl implements DataRepository{
 			requestForecastParameterSingleList.add(requestForecastParameterSingle);
 		}
 		return requestForecastParameterSingleList;
+	}
+
+	@Override
+	public List<String> getAttachmentPathListByResponseTimeBeforeMoment(Date dateBound) {
+		List<String> attachmentPathList = new ArrayList<>();
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("dateBound", dateBound);
+		
+		String query = "select attachment_path from v_request where response_date_time <= :dateBound";
+		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer attachmentPathColumn = rowSet.findColumn("attachment_path");
+		while(rowSet.next()){
+			String attachmentPath = rowSet.getString(attachmentPathColumn);
+			if(attachmentPath!=null && !attachmentPath.trim().equals("")){
+				attachmentPathList.add(attachmentPath);
+			}
+		}
+		return attachmentPathList;
+	}
+
+	@Override
+	public List<String> getDocumentPathListByResponseTimeBeforeMoment(Date dateBound) {
+		List<String> documentPathList = new ArrayList<>();
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("dateBound", dateBound);
+		
+		String query = "select document_path from v_request where response_date_time <= :dateBound";
+		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
+		Integer documentPathColumn = rowSet.findColumn("document_path");
+		while(rowSet.next()){
+			String documentPath = rowSet.getString(documentPathColumn);
+			if(documentPath!=null && !documentPath.trim().equals("")){
+				documentPathList.add(documentPath);
+			}
+		}
+		return documentPathList;
+	}
+
+	@Override
+	public Integer deleteRequestByResponseTimeBeforeMoment(Date dateBound) {
+		Map<String, Object> namedParameters = new HashMap<>();
+		namedParameters.put("dateBound", dateBound);
+		String query = "delete from v_request where response_date_time <= :dateBound";
+		return namedparameterJdbcTemplate.update(query, namedParameters);
 	}
 }

@@ -7,6 +7,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,7 +50,6 @@ public class DataServiceImpl implements DataService {
 	@PostConstruct
 	private void postConstruct() throws DataServiceException{
 		this.sturpUpFileStorage();
-		//this.deleteAllFiles();
 	}
 	
 	@Override
@@ -195,7 +195,6 @@ public class DataServiceImpl implements DataService {
      * @throws DataServiceException*/
 	@Override
 	public String putFile(MultipartFile file) throws DataServiceException {
-		//TODO: add insert information to database
 		try {
             if (file.isEmpty()) {
             	LOG.error("File is empty: " + file.getOriginalFilename());
@@ -314,5 +313,49 @@ public class DataServiceImpl implements DataService {
 	public String getForecastFileExcelMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
 		String filePath = this.getForecastFileMultipleDatabaseMode(responceForecastList);
 		return filePath;
+	}
+
+	/** Delete file in input storage*/
+	@Override
+	public void deleteFileStorageInput(String filename) {
+		Path path = this.inputFolderLocation.resolve(filename);
+		if(path!=null){
+			try {
+				Files.delete(path);
+			} catch (IOException e) {
+				LOG.error("Can't delete file in input storage:" + filename + " ." + e.toString());
+			}
+		}
+	}
+
+	/** Delete file in output storage*/
+	@Override
+	public void deleteFileStorageOutput(String filename) {
+		Path path = this.outputFolderLocation.resolve(filename);
+		if(path!=null){
+			try {
+				Files.delete(path);
+			} catch (IOException e) {
+				LOG.error("Can't delete file in output storage:" + filename + " ." + e.toString());
+			}
+		}
+	}
+	
+	/** Get v_request.attachment_path where v_request.response_date_time before moment of time*/
+	@Override
+	public List<String> getAttachmentPathListByResponseTimeBeforeMoment(Date dateBound) {
+		return dataRepository.getAttachmentPathListByResponseTimeBeforeMoment(dateBound);
+	}
+	
+	/** Get v_request.document_path where v_request.response_date_time before moment of time*/
+	@Override
+	public List<String> getDocumentPathListByResponseTimeBeforeMoment(Date dateBound) {
+		return dataRepository.getDocumentPathListByResponseTimeBeforeMoment(dateBound);
+	}
+	
+	/** Delete all request where v_request.response_date_time before moment of time*/
+	@Override
+	public Integer deleteRequestByResponseTimeBeforeMoment(Date dateBound) {
+		return dataRepository.deleteRequestByResponseTimeBeforeMoment(dateBound);
 	}
 }
