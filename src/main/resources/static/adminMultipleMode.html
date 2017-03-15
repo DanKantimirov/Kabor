@@ -201,9 +201,12 @@
 					  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
 					  <div class="col-md-4">
 						<select id="predictionMethod" name="predictionMethod" class="form-control">
-							<option value="ARIMA_2_0_0">ARIMA_2_0_0</option>
+							<option value="AUTO_CHOOSE">AUTO CHOOSE (BEST FIT)</option>
+							<option value="ARIMA_AUTO">ARIMA</option>
+							<option value="ETS">EXPONENTIAL SMOOTHING (ETS)</option>
+							<option value="TBATS">TBATS</option>
+							<option value="HOLT_WINTERS">HOLT-WINTERS</option>
 							<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
-							<option value="WINTER_HOLT">WINTER_HOLT</option>
 						</select>
 						<span class="help-block">Method of demand forecasting</span> 
 					  </div>

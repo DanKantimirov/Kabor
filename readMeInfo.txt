@@ -4,11 +4,12 @@
 	mvn install:install-file -Dfile=D:\teraDriver\Rserve.jar -DgroupId=r.proglang  -DartifactId=rserve -Dversion=1.0 -Dpackaging=jar
 
 2.) Use SettingUpDatabase.txt for creating database schema.
-3.) Your R instance has to contains packages: Rserve,forecast,GMDH. Just use commands from list below for installation them.
+3.) Your R instance has to contains packages: Rserve,forecast,GMDH,dplyr. Just use commands from list below for installation them.
 
 	install.packages("Rserve")
 	install.packages("forecast")
 	install.packages("GMDH")
+	install.packages("dplyr")
 
 4.) After installing all packages start Rserve. 
 
@@ -47,3 +48,5 @@
 
 	Login: analyst
 	Password: secret
+	
+10.) All R method which are used in the service is available at RScriptsExamples directory.

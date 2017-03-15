@@ -1,0 +1,9 @@
+kaborLoess<-function(myvector,countDaysInYear,year,dayOfYear){
+	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear))
+	timeMoments = 1:length(myts)
+	timeSeries = myts
+	mySmoothing <- loess(timeSeries~timeMoments)
+	forecast = predict(mySmoothing)
+	myobj <- as.numeric(forecast)
+	return (myobj)
+}

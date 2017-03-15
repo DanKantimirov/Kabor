@@ -1,0 +1,25 @@
+kaborAutoChoose<-function(myvector,countDaysInYear,year,dayOfYear,forecastDuration){
+
+	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear ))
+	
+	mytsets <- ets(myts)
+	mytsarima <- auto.arima(myts)
+	mytstbats <- tbats(myts)
+	
+	etsAIC <- mytsets$aic
+	arimaAIC <- mytsarima$aic
+	tbatsAIC <- mytstbats$AIC
+	
+	if (etsAIC <= arimaAIC && etsAIC <= tbatsAIC) {
+		mytimeforecastETS <-forecast(mytsets, h=forecastDuration)
+		myobj <- as.numeric(mytimeforecastETS$mean)
+	} else if (arimaAIC <= etsAIC && arimaAIC <= tbatsAIC) {
+		mytimeforecastARIMA <-forecast(mytsarima, h=forecastDuration)
+		myobj <- as.numeric(mytimeforecastARIMA$mean)
+	} else {
+		mytimeforecastTBATS <-forecast(mytstbats, h=forecastDuration)
+		myobj <- as.numeric(mytimeforecastTBATS$mean)
+	}
+	
+	return (myobj)
+}

@@ -43,7 +43,8 @@ public class RUtils {
 		this.rConnectionPool.setPoolSettings(this.rInitialCountConnections, this.rMaxCountConnections, this.rAwaitIfBusyTimeoutMillisecond);
 		List<String> connectionOpenCommanList = new ArrayList<>();
 		connectionOpenCommanList.add("library('forecast')");
-		//connectionOpenCommanList.add("library('GMDH')");
+		connectionOpenCommanList.add("library('dplyr')");
+		connectionOpenCommanList.add("library('GMDH')");
 		this.rConnectionPool.setConnectionLifecycleCommands(connectionOpenCommanList, null, null);
 		this.rConnectionPool.attachToRserve();
 	}
@@ -61,29 +62,169 @@ public class RUtils {
 		}
 		WhsArtTimeline whsArtTimelineSlope = this.makeWhsArtTimelineSlope(whsArtTimeline,forecastParameters.getSmoothType());
 		switch(forecastParameters.getForecastMethod()){
-			case WINTER_HOLT:{
+		
+    		case AUTO_CHOOSE:{
+    			return makePredictionAutoChoose(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
+    		}
+			case HOLT_WINTERS:{
 				return makePredictionHoltWinters(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
 			}
 			
-			case ARIMA_2_0_0:{
-				return makePredictionArima200(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
+			case ARIMA_AUTO:{
+				return makePredictionArimaAuto(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
 			}
 			
 			case NEURAL_NETWORK:{
 				return makePredictionNeuralNetwork(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
 			}
+			
+			case ETS:{
+				return makePredictionETS(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
+			}
+			
+			case TBATS:{
+				return makePredictionTBATS(forecastParameters,whsArtTimeline,whsArtTimelineSlope);
+			}
+			
 		}
 		return null;
 	}
 	
-	@SuppressWarnings("unused")
-	private List<WhsArtTimeline> makeWhsArtTimelineSlopeList(List<WhsArtTimeline> whsArtTimelineList, SMOOTH_TYPE slope_type) throws Exception {
-		List<WhsArtTimeline> whsArtTimelineSlopeList = new ArrayList<WhsArtTimeline>();
-		for(WhsArtTimeline whsArtTimeline : whsArtTimelineList){
-			WhsArtTimeline whsArtTimelineSlope = this.makeWhsArtTimelineSlope(whsArtTimeline,slope_type);
-			whsArtTimelineSlopeList.add(whsArtTimelineSlope);
+	private ResponceForecast makePredictionAutoChoose(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline, WhsArtTimeline whsArtTimelineSlope) throws Exception {
+		//Select between ARIMA, ETS and TBATS
+		RCommonConnection connection = null;
+		ResponceForecast result = new ResponceForecast();
+		try {
+
+			String salesValues = whsArtTimeline.getSalesSortedByDate();
+			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
+			Integer dayOfYear = startTraining.getDayOfYear();
+			Integer year = startTraining.getYear();
+			Integer countDaysInYear = 365;
+			if(startTraining.isLeapYear()){
+				countDaysInYear = 366;
+			}
+
+			connection = this.rConnectionPool.getConnection();
+			connection.voidEval("myvector <- c(" + salesValues + ")");
+			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			
+			connection.voidEval("mytsets <- ets(myts)");
+			connection.voidEval("mytsarima <- auto.arima(myts)");
+			connection.voidEval("mytstbats <- tbats(myts)");
+
+			
+			REXP etsAICRexp = connection.parseAndEval("etsAIC <- mytsets$aic");
+			REXP arimaAICRexp = connection.parseAndEval("arimaAIC <- mytsarima$aic");
+			REXP tbatsAICRexp = connection.parseAndEval("tbatsAIC <- mytstbats$AIC");
+			
+			Double etsAIC = etsAICRexp.asDouble();
+			Double arimaAIC = arimaAICRexp.asDouble();
+			Double tbatsAIC = tbatsAICRexp.asDouble();
+			
+			if(etsAIC <= arimaAIC && etsAIC <= tbatsAIC){
+				connection.voidEval("mytimeforecast1 <-forecast(mytsets, h="+ forecastParameters.getForecastDuration() + ")");
+			} else if(arimaAIC <= etsAIC && arimaAIC <= tbatsAIC){
+				connection.voidEval("mytimeforecast1 <-forecast(mytsarima, h="+ forecastParameters.getForecastDuration() + ")");
+			} else{
+				connection.voidEval("mytimeforecast1 <-forecast(mytstbats, h="+ forecastParameters.getForecastDuration() + ")");
+			}
+			
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
+			
+			double[] resultFromR = forecastREXP.asDoubles();
+			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR,whsArtTimelineSlope);
+			return result;
+		} catch (Exception e) {
+			LOG.error("Forecast exception:" + e.toString());
+			throw new Exception("Forecast exception:" + e.toString());
+		} finally {
+			if (connection != null) {
+				try {
+					this.rConnectionPool.releaseConnection(connection);
+				} catch (Exception e) {
+					LOG.error("Can't close r connection:" + e.toString());
+				}
+			}
 		}
-		return whsArtTimelineSlopeList;
+	}
+	
+	private ResponceForecast makePredictionTBATS(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline, WhsArtTimeline whsArtTimelineSlope) throws Exception {
+		RCommonConnection connection = null;
+		ResponceForecast result = new ResponceForecast();
+		try {
+
+			String salesValues = whsArtTimeline.getSalesSortedByDate();
+			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
+			Integer dayOfYear = startTraining.getDayOfYear();
+			Integer year = startTraining.getYear();
+			Integer countDaysInYear = 365;
+			if(startTraining.isLeapYear()){
+				countDaysInYear = 366;
+			}
+
+			connection = this.rConnectionPool.getConnection();
+			connection.voidEval("myvector <- c(" + salesValues + ")");
+			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("mytstbats <- tbats(myts)");
+			connection.voidEval("mytimeforecast1 <-forecast(mytstbats, h="+ forecastParameters.getForecastDuration() + ")");
+			
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
+			double[] resultFromR = forecastREXP.asDoubles();
+
+			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR,whsArtTimelineSlope);
+			return result;
+		} catch (Exception e) {
+			LOG.error("Forecast exception:" + e.toString());
+			throw new Exception("Forecast exception:" + e.toString());
+		} finally {
+			if (connection != null) {
+				try {
+					this.rConnectionPool.releaseConnection(connection);
+				} catch (Exception e) {
+					LOG.error("Can't close r connection:" + e.toString());
+				}
+			}
+		}
+	}
+
+	private ResponceForecast makePredictionETS(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline, WhsArtTimeline whsArtTimelineSlope) throws Exception {
+		RCommonConnection connection = null;
+		ResponceForecast result = new ResponceForecast();
+		try {
+
+			String salesValues = whsArtTimeline.getSalesSortedByDate();
+			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
+			Integer dayOfYear = startTraining.getDayOfYear();
+			Integer year = startTraining.getYear();
+			Integer countDaysInYear = 365;
+			if(startTraining.isLeapYear()){
+				countDaysInYear = 366;
+			}
+
+			connection = this.rConnectionPool.getConnection();
+			connection.voidEval("myvector <- c(" + salesValues + ")");
+			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("mytsets <- ets(myts)");
+			connection.voidEval("mytimeforecast1 <-forecast(mytsets, h="+ forecastParameters.getForecastDuration() + ")");
+			
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
+			double[] resultFromR = forecastREXP.asDoubles();
+
+			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR,whsArtTimelineSlope);
+			return result;
+		} catch (Exception e) {
+			LOG.error("Forecast exception:" + e.toString());
+			throw new Exception("Forecast exception:" + e.toString());
+		} finally {
+			if (connection != null) {
+				try {
+					this.rConnectionPool.releaseConnection(connection);
+				} catch (Exception e) {
+					LOG.error("Can't close r connection:" + e.toString());
+				}
+			}
+		}
 	}
 
 	private WhsArtTimeline makeWhsArtTimelineSlope(WhsArtTimeline whsArtTimeline, SMOOTH_TYPE slope_type) throws Exception {
@@ -119,8 +260,8 @@ public class RUtils {
 			connection.voidEval("myts <-ts(myvector,  freq="+countDaysInYear+", start=c(" + year + "," + dayOfYear + "))");
 			connection.voidEval("mytimeWinter <- HoltWinters(myts,beta=FALSE, gamma=FALSE)");
 			connection.voidEval("mytimeforecast1 <- forecast.HoltWinters(mytimeWinter, h="+ forecastParameters.getForecastDuration() + ")");
-			REXP f = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
-			double[] resultFromR = f.asDoubles();
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
+			double[] resultFromR = forecastREXP.asDoubles();
 			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR,whsArtTimelineSlope);
 			return result;
 			
@@ -138,7 +279,7 @@ public class RUtils {
 		}
 	}
 	
-	private ResponceForecast makePredictionArima200(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline, WhsArtTimeline whsArtTimelineSlope) throws Exception {
+	private ResponceForecast makePredictionArimaAuto(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline, WhsArtTimeline whsArtTimelineSlope) throws Exception {
 		RCommonConnection connection = null;
 		ResponceForecast result = new ResponceForecast();
 		try {
@@ -155,11 +296,11 @@ public class RUtils {
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
-			connection.voidEval("mytsarima <- arima(myts, order=c(2,0,0))");
-			connection.voidEval("mytimeforecast1 <-forecast.Arima(mytsarima, h="+ forecastParameters.getForecastDuration() + ")");
+			connection.voidEval("mytsarima <- auto.arima(myts)");
+			connection.voidEval("mytimeforecast1 <-forecast(mytsarima, h="+ forecastParameters.getForecastDuration() + ")");
 			
-			REXP f = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
-			double[] resultFromR = f.asDoubles();
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
+			double[] resultFromR = forecastREXP.asDoubles();
 
 			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR,whsArtTimelineSlope);
 			return result;
@@ -199,8 +340,8 @@ public class RUtils {
 			connection.voidEval("myvector <- c(" + salesValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
 			//connection.voidEval("mytimeforecast1 <- fcast(myts, method = 'GMDH', input = 3, layer = 2, f.number = "	+ forecastDuration + ", level = 95, tf = 'sigmoid')");
-			REXP f = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
-			double[] resultFromR = f.asDoubles();
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
+			double[] resultFromR = forecastREXP.asDoubles();
 
 			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR,whsArtTimelineSlope);
 			return result;
@@ -277,8 +418,8 @@ public class RUtils {
 			connection.voidEval("timeSeries = myts");
 			connection.voidEval("mySmoothing <- loess(timeSeries~timeMoments)");
 			connection.voidEval("forecast = predict(mySmoothing)");
-			REXP f = connection.parseAndEval("myobj <- as.numeric(forecast)");
-			double[] resultFromR = f.asDoubles();
+			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(forecast)");
+			double[] resultFromR = forecastREXP.asDoubles();
 			for(int i=0;i<resultFromR.length;i++){
 				result.add(resultFromR[i]);
 			}

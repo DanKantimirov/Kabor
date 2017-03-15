@@ -74,7 +74,7 @@ public class RequestServiceImpl implements RequestService {
         String defaultSettingsInput = reqParams.get("defaultSettingsInput")[0];
         if(defaultSettingsInput!=null && defaultSettingsInput.equals("1")){
         	forecastParameter.setDuration(7);
-        	forecastParameter.setForecast_method(FORECAST_METHOD.WINTER_HOLT);
+        	forecastParameter.setForecast_method(FORECAST_METHOD.ARIMA_AUTO);
         	forecastParameter.setSmoothing_method(SMOOTH_TYPE.NO);
         } else{
         	Integer duration = Integer.valueOf(reqParams.get("predictionDaysInput")[0]);

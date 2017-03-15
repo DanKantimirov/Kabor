@@ -1,7 +1,10 @@
 package ru.kabor.demand.prediction.utils;
 
 public enum FORECAST_METHOD {
-	WINTER_HOLT,
-	ARIMA_2_0_0,
-	NEURAL_NETWORK;
+	AUTO_CHOOSE,
+	ARIMA_AUTO,
+	NEURAL_NETWORK,
+	HOLT_WINTERS,
+	ETS,
+	TBATS;
 }
