@@ -26,7 +26,6 @@ public class MultithreadingCallable implements Callable<ResponceForecast> {
 	@Override
 	public ResponceForecast call() throws Exception {
 		ResponceForecast res =  rUtils.makePrediction(forecastParameters, whsArtTimeline);
-		//System.out.println(res);
 		return res;
 	}
 

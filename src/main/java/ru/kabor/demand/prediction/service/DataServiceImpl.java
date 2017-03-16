@@ -9,6 +9,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -41,10 +45,13 @@ public class DataServiceImpl implements DataService {
 	private DataRepository dataRepository;
 	
 	@Value("${storage.inputFolderLocation}")
-	private Path inputFolderLocation; 
+	private Path inputFolderLocation;
 	
 	@Value("${storage.outputFolderLocation}")
-	private Path outputFolderLocation; 
+	private Path outputFolderLocation;
+	
+	@Value("${parallel.countThreads}")
+	private Integer countThreads;
 	
 	
 	@PostConstruct
@@ -111,34 +118,43 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters) throws DataServiceException{
-
+	public ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters){
+		
+		ResponceForecast forecast;
+		
 		Integer requestId = forecastParameters.getRequestId();
 		Integer whsId = forecastParameters.getWhsId();
 		Integer artId = forecastParameters.getArtId();
 		String trainingStart = forecastParameters.getTrainingStart();
 		String trainingEnd = forecastParameters.getTrainingEnd();
 		
+		forecast = new ResponceForecast(whsId, artId);
+		
 		if (requestId == null) {
 			LOG.error("request_id can't be empty" + forecastParameters.toString());
-			throw new DataServiceException("request_id can't be empty");
+			forecast.setErrorMessage("request_id can't be empty");
+			return forecast;
 		}
 
 		if (whsId == null) {
 			LOG.error("whs_id can't be empty" + forecastParameters.toString());
-			throw new DataServiceException("whs_id can't be empty");
+			forecast.setErrorMessage("whs_id can't be empty");
+			return forecast;
 		}
 		if (artId == null) {
 			LOG.error("art_id can't be empty" + forecastParameters.toString());
-			throw new DataServiceException("art_id can't be empty");
+			forecast.setErrorMessage("art_id can't be empty");
+			return forecast;
 		}
 		if (trainingStart == null || trainingStart.trim().equals("")) {
 			LOG.error("training_start can't be empty" + forecastParameters.toString());
-			throw new DataServiceException("training_start can't be empty");
+			forecast.setErrorMessage("training_start can't be empty");
+			return forecast;
 		}
 		if (trainingEnd == null || trainingEnd.trim().equals("")) {
 			LOG.error("training_end can't be empty" + forecastParameters.toString());
-			throw new DataServiceException("training_end can't be empty");
+			forecast.setErrorMessage("training_end can't be empty");
+			return forecast;
 		}
 		
 		LocalDate startDate = LocalDate.parse(trainingStart);
@@ -146,17 +162,18 @@ public class DataServiceImpl implements DataService {
 		
 		if(!startDate.isBefore(endDate)){
 			LOG.error("Start date of forecasting is earlier than First date of analysis: " + forecastParameters.toString());
-			throw new DataServiceException("Start date of forecasting is earlier than First date of analysis");
+			forecast.setErrorMessage("Start date of forecasting is earlier than First date of analysis");
+			return forecast;
 		}
 		
-		ResponceForecast forecast;
 		try {
 			SqlRowSet salesRowSet = dataRepository.getSales(forecastParameters);
-			forecast = dataRepository.getForecast(forecastParameters,salesRowSet);
+			forecast = dataRepository.getForecast(forecastParameters, salesRowSet);
+			return forecast;
 		} catch (Exception e) {
-			throw new DataServiceException(e.toString());
+			forecast.setErrorMessage(e.toString());
+			return forecast;
 		}
-		return forecast;
 	}
 
 	@Override
@@ -302,8 +319,48 @@ public class DataServiceImpl implements DataService {
 	public List<ResponceForecast> getForecastExcelMode(Integer requestId) throws DataServiceException {
 		List<ResponceForecast> responceList = new ArrayList<>();
 		List<RequestForecastParameterSingle> requestForecastParameterSingleList = dataRepository.getRequestForecastParameterSingleList(requestId);
-		for(RequestForecastParameterSingle request : requestForecastParameterSingleList){
-			ResponceForecast responce = this.getForecastSingleDatabaseMode(request);
+		
+		//Sending tasks to execute
+		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
+		List<Future<ResponceForecast>> futureResponsetList = new ArrayList<Future<ResponceForecast>>();
+
+		for (int i = 0; i < requestForecastParameterSingleList.size(); i++) {
+			RequestForecastParameterSingle forecastParameter = requestForecastParameterSingleList.get(i);
+			Future<ResponceForecast> futureResponse = executorService.submit(() -> {
+				return this.getForecastSingleDatabaseMode(forecastParameter);
+			});
+			futureResponsetList.add(futureResponse);
+		}
+
+		executorService.shutdown();
+		try {
+			executorService.awaitTermination(2000, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			throw new DataServiceException("R is not answerring too long");
+		} finally{
+			if(!executorService.isShutdown()){
+				executorService.shutdownNow();
+			}
+		}
+		
+		//Getting results from tasks
+		for (Future<ResponceForecast> futureResponse : futureResponsetList) {
+			ResponceForecast responce;
+			try {
+				responce = futureResponse.get();
+				responceList.add(responce);
+				//Mark that request as completed
+				requestForecastParameterSingleList.removeIf(e->e.getArtId().equals(responce.getArtId()) && e.getWhsId().equals(responce.getWhsId()));
+				
+			} catch (Exception e) {
+				LOG.error("Getting forecast result exception: " + e.toString());
+			}
+		}
+		
+		//Making complete response
+		for(RequestForecastParameterSingle requestParameter : requestForecastParameterSingleList){
+			ResponceForecast responce = new ResponceForecast(requestParameter.getWhsId(), requestParameter.getArtId());
+			responce.setErrorMessage("Couldn't make forecast");
 			responceList.add(responce);
 		}
 		return responceList;

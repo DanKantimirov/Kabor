@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,12 @@ public class ExcelModeControllerImpl implements ExcelModeController {
 
 	@Autowired
 	EmailSender emailSender;
+	
+	@Value("${serverUser.captchaKey}")
+	String captchaSecretKey;
+	
+	@Value("${serverUser.useRealCaptch}")
+	Boolean isUseRealCaptcha;
 	
 	/** Return list of already downloaded files and redirect to form of adding new
 	 * @throws IOException
@@ -108,8 +115,7 @@ public class ExcelModeControllerImpl implements ExcelModeController {
 			HttpServletRequest request,
     		RedirectAttributes redirectAttributes) throws DataServiceException, UnsupportedEncodingException, IOException {
     	
-    	String testSecretKey = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe";
-    	boolean verify = VerifyCaptcha.verify(testSecretKey, gRecaptchaResponse, false);
+    	boolean verify = VerifyCaptcha.verify(captchaSecretKey, gRecaptchaResponse, isUseRealCaptcha);
     	if(!verify){
     		throw new DataServiceException("Wrong captcha");
     	}

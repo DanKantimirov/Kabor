@@ -16,7 +16,7 @@ import ru.kabor.demand.prediction.entity.ResponceForecast;
 @Service
 public interface DataService {
 	/** Forecast for inner database*/
-	ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters) throws DataServiceException;
+	ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters);
 	List<ResponceForecast> getForecastMultipleDatabaseMode(RequestForecastParameterMultiple forecastParameters) throws DataServiceException;
 	String getForecastFileSingleDatabaseMode(ResponceForecast responceForecast) throws DataServiceException;
 	String getForecastFileMultipleDatabaseMode(List<ResponceForecast> responceForecastList) throws DataServiceException;

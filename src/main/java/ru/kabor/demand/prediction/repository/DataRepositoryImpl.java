@@ -127,15 +127,16 @@ public class DataRepositoryImpl implements DataRepository{
 		String query = "select count(*) from v_sales_rest f  where f.whs_id in(:listWhsIdParam)  and f.art_id in (:listArtIdParam) and f.day_id between date_format(:dayStartParam ,'%Y-%m-%d') and date_format(:dayFinishParam, '%Y-%m-%d')";
 		SqlRowSet rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
 		Integer countRecords = 0;
+		
 		if(rowSet.next()){
 			countRecords = rowSet.getInt(1);
 		}
+		
 		if(countRecords.equals(0)){
 			throw new DataServiceException("Can't find any records for that request_id:" + requestId + " whs_id_bulk:" + forecastParameters.getWhsIdBulk() + " art_id_bulk:" + forecastParameters.getArtIdBulk());
 		}
 		
-		
-		query = "select whs_id, f.art_id, sale_qnty, rest_qnty,day_id  from v_sales_rest f  where f.whs_id in(:listWhsIdParam)  and f.art_id in (:listArtIdParam) and f.day_id between date_format(:dayStartParam ,'%Y-%m-%d') and date_format(:dayFinishParam, '%Y-%m-%d')  order by f.whs_id, f.art_id, f.day_id";
+		query = "select whs_id, f.art_id, sale_qnty, rest_qnty,day_id  from v_sales_rest f  where f.request_id = :requestIdParam and f.whs_id in(:listWhsIdParam)  and f.art_id in (:listArtIdParam) and f.day_id between date_format(:dayStartParam ,'%Y-%m-%d') and date_format(:dayFinishParam, '%Y-%m-%d')  order by f.whs_id, f.art_id, f.day_id";
 		rowSet = namedparameterJdbcTemplate.queryForRowSet(query, namedParameters);
 		return rowSet;
 	}
@@ -202,6 +203,10 @@ public class DataRepositoryImpl implements DataRepository{
 			executorService.awaitTermination(200, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			throw new DataServiceException("R is not answerring too long");
+		} finally{
+			if(!executorService.isShutdown()){
+				executorService.shutdownNow();
+			}
 		}
 		
 		for(Future<ResponceForecast> future: resultList){
@@ -237,98 +242,9 @@ public class DataRepositoryImpl implements DataRepository{
 
 	@Override
 	public String getForecastFile(ResponceForecast responceForecast) throws DataServiceException {
-		FileOutputStream out = null;
-		Workbook book = null;
-		String fullFilePath = "";
-		String fileName = "";
-		Integer rowNumber = 0;
-
-		try {
-			book = new HSSFWorkbook();
-			Sheet sheet = book.createSheet("Prediction");
-
-			Row row = sheet.createRow(0);
-			
-			//Header
-			Cell cell = row.createCell(0);
-			cell.setCellValue("whs_id");
-			cell = row.createCell(1);
-			cell.setCellValue("art_id");
-			cell = row.createCell(2);
-			cell.setCellValue("day_id");
-			cell = row.createCell(3);
-			cell.setCellValue("sales_qnty");
-			cell = row.createCell(4);
-			cell.setCellValue("smoothed sales_qnty");
-			cell = row.createCell(5);
-			cell.setCellValue("isPrediction");
-			
-			for (int i = 0; i < responceForecast.getTimeMomentsActual().size(); i++) {
-				rowNumber++;
-				row = sheet.createRow(rowNumber);
-				cell = row.createCell(0);
-				cell.setCellValue(responceForecast.getWhsId());
-				cell = row.createCell(1);
-				cell.setCellValue(responceForecast.getArtId());
-				cell = row.createCell(2);
-				cell.setCellValue(responceForecast.getTimeMomentsActual().get(i).getTimeMoment().toString());
-				cell = row.createCell(3);
-				cell.setCellValue(responceForecast.getTimeMomentsActual().get(i).getSalesQnty());
-				cell = row.createCell(4);
-				cell.setCellValue(responceForecast.getTimeMomentsSmoothed().get(i).getSalesQnty());
-				
-				cell = row.createCell(5);
-				cell.setCellValue(0);
-			}
-
-			for (int i = 0; i < responceForecast.getTimeMomentsPrediction().size(); i++) {
-				rowNumber++;
-				row = sheet.createRow(rowNumber);
-				cell = row.createCell(0);
-				cell.setCellValue(responceForecast.getWhsId());
-				cell = row.createCell(1);
-				cell.setCellValue(responceForecast.getArtId());
-				cell = row.createCell(2);
-				cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getTimeMoment().toString());
-				cell = row.createCell(3);
-				cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getSalesQnty());
-
-				cell = row.createCell(5);
-				cell.setCellValue(1);
-			}
-
-			// Меняем размер столбца
-			sheet.autoSizeColumn(0);
-			sheet.autoSizeColumn(1);
-			sheet.autoSizeColumn(2);
-			sheet.autoSizeColumn(3);
-			sheet.autoSizeColumn(4);
-			sheet.autoSizeColumn(5);
-			fileName = responceForecast.getWhsId() + "_" + responceForecast.getArtId() + ".xls";
-			fullFilePath = outputFolderLocation + fileSeparator +fileName;
-			
-			out = new FileOutputStream(new File(fullFilePath),false);
-			
-			book.write(out);
-		} catch (Exception e) {
-			throw new DataServiceException("Can't build excel file" + e);
-		} finally {
-			if (out != null) {
-				try {
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			if (book != null) {
-				try {
-					book.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		return fileName;
+		List<ResponceForecast> responceForecastList = new ArrayList<>();
+		responceForecastList.add(responceForecast);
+		return this.getForecastFileMultiple(responceForecastList);
 	}
 	
 	@Override
@@ -337,16 +253,57 @@ public class DataRepositoryImpl implements DataRepository{
 		Workbook book = null;
 		String fullFilePath = "";
 		String fileName = "";
-		Integer rowNumber = 0;
+		Integer rowSummarySheetNumber = 0;
+		Integer rowPredictionSheetNumber = 0;
 
 		try {
 			book = new HSSFWorkbook();
-			Sheet sheet = book.createSheet("Prediction");
 
-			Row row = sheet.createRow(0);
+			Sheet sheetSummary = book.createSheet("Summary");
+			Row row = sheetSummary.createRow(0);
+			Cell cell;
+			// Header summary
+			cell = row.createCell(0);
+			cell.setCellValue("whs_id");
+			cell = row.createCell(1);
+			cell.setCellValue("art_id");
+			cell = row.createCell(2);
+			cell.setCellValue("status");
+			cell = row.createCell(3);
+			cell.setCellValue("info");
+
+			for (int k = 0; k < responceForecastList.size(); k++) {
+				rowSummarySheetNumber++;
+				ResponceForecast responceForecast = responceForecastList.get(k);
+				Boolean hasError = responceForecast.getHasError();
+				String status = "";
+				String info = "";
+
+				if (hasError) {
+					status = "error";
+					info = responceForecast.getErrorMessage();
+				} else {
+					status = "success";
+				}
+
+				row = sheetSummary.createRow(rowSummarySheetNumber);
+				cell = row.createCell(0);
+				cell.setCellValue(responceForecast.getWhsId());
+				cell = row.createCell(1);
+				cell.setCellValue(responceForecast.getArtId());
+				cell = row.createCell(2);
+				cell.setCellValue(status);
+				cell = row.createCell(3);
+				cell.setCellValue(info);
+			}
 			
-			//Header
-			Cell cell = row.createCell(0);
+			
+			Sheet sheetPrediction = book.createSheet("Prediction");
+
+			row = sheetPrediction.createRow(0);
+			
+			//Header prediction
+			cell = row.createCell(0);
 			cell.setCellValue("whs_id");
 			cell = row.createCell(1);
 			cell.setCellValue("art_id");
@@ -379,8 +336,8 @@ public class DataRepositoryImpl implements DataRepository{
 					startI = 0;
 				}
 				for (int i = startI; i <responceForecast.getTimeMomentsActual().size(); i++) {
-					rowNumber++;
-					row = sheet.createRow(rowNumber);
+					rowPredictionSheetNumber++;
+					row = sheetPrediction.createRow(rowPredictionSheetNumber);
 					cell = row.createCell(0);
 					cell.setCellValue(responceForecast.getWhsId());
 					cell = row.createCell(1);
@@ -402,8 +359,8 @@ public class DataRepositoryImpl implements DataRepository{
 					if (printedForecast > maxPredictionPerForecast) {
 						break;
 					}
-					rowNumber++;
-					row = sheet.createRow(rowNumber);
+					rowPredictionSheetNumber++;
+					row = sheetPrediction.createRow(rowPredictionSheetNumber);
 					cell = row.createCell(0);
 					cell.setCellValue(responceForecast.getWhsId());
 					cell = row.createCell(1);
@@ -421,12 +378,12 @@ public class DataRepositoryImpl implements DataRepository{
 			//+++++++++++++++++Main For+++++++++++++++++++++++++
 
 			// Меняем размер столбца
-			sheet.autoSizeColumn(0);
-			sheet.autoSizeColumn(1);
-			sheet.autoSizeColumn(2);
-			sheet.autoSizeColumn(3);
-			sheet.autoSizeColumn(4);
-			sheet.autoSizeColumn(5);
+			sheetPrediction.autoSizeColumn(0);
+			sheetPrediction.autoSizeColumn(1);
+			sheetPrediction.autoSizeColumn(2);
+			sheetPrediction.autoSizeColumn(3);
+			sheetPrediction.autoSizeColumn(4);
+			sheetPrediction.autoSizeColumn(5);
 			
 			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xls";;
 			
