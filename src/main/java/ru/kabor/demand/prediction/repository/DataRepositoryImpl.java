@@ -60,12 +60,6 @@ public class DataRepositoryImpl implements DataRepository{
 	
     @Value("${storage.outputFolderLocation}")
     private String outputFolderLocation;
-
-    @Value("${serverUser.contextPath}")
-    private String contextPath;
-
-    @Value("${serverUser.port}")
-    private String port;
 	
 	@Autowired
 	private NamedParameterJdbcTemplate namedparameterJdbcTemplate;

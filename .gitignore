@@ -20,3 +20,4 @@ predictorLog.txt
 /storage_root_output/
 /.idea/
 predictorLog.txt.*
+src/main/resources/application.propertiesProd
