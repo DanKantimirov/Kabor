@@ -54,6 +54,8 @@ public class EmailSender {
 	private String password;
 	@Value("${email.useSSL}")
 	private String useSSL;
+	@Value("${contact.email}")
+	private String contactEmail;
 	private String fullLogin;
 	private Session session;
 
@@ -107,6 +109,30 @@ public class EmailSender {
 		});
 		
 		return session;
+	}
+
+	/**
+	 * Send user comment to our email
+	 * @param firstname
+	 * @param lastname
+	 * @param clientEmail
+	 * @param comments
+	 */
+	public void sendContactEmail(String firstname, String lastname, String clientEmail, String comments) {
+		try {
+			Message message = new MimeMessage(session);
+			message.setFrom(new InternetAddress(this.fullLogin));
+			message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(contactEmail));
+			String fromString = firstname + " " + lastname + " " + clientEmail + "\n";
+			message.setSubject("Need forecast new comment from " + firstname + " " + lastname);
+			message.setSentDate(new Date());
+			message.setContent(fromString + comments, "text/html");
+			Transport.send(message);
+		} catch (AddressException e) {
+			e.printStackTrace();
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**

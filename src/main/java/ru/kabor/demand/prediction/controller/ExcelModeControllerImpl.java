@@ -92,6 +92,25 @@ public class ExcelModeControllerImpl implements ExcelModeController {
                 .body(file);
     }
 
+	/**
+	 * Send user comment to our email
+	 * @param firstname
+	 * @param lastname
+	 * @param email
+	 * @param comments
+	 * @return
+	 */
+    @PostMapping("/sendContactEmail")
+    public String sendContactEmail(
+			@RequestParam(name="firstname") String firstname,
+			@RequestParam(name="lastname") String lastname,
+			@RequestParam(name="email") String email,
+			@RequestParam(name="comments") String comments
+			) {
+		emailSender.sendContactEmail(firstname, lastname, email, comments);
+    	return "redirect:/contactUs.html";
+	}
+
 	/** Send file to server and start making forecasting
 	 * @param file Excel file with sales and rests
 	 * @param defaultSettingsInput If it is not null or 0: 7 days, WINTER_HOLT, none smoothing

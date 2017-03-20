@@ -36,12 +36,74 @@
 				});
 				
 				$('#nav').localScroll({duration:800});
+
+				$("#send-email-btn").on("click", function(e) {
+				    e.preventDefault();
+				   if ($("#first_name").val().trim() == 0
+					   || $("#last_name").val().trim() == 0
+					   || $("#email").val().trim() == 0
+					   || $("#comments").val().trim() == 0
+				   ) {
+				       alert("You need fill all fields in form!")
+				       return false;
+				   } else {
+				       //if capture
+                       $("#emailForm").submit();
+				   }
+				});
 		
 		});
 	</script>
 </head>
 
 <body>
+	<!-- Contact Modal -->
+	<div id="emailModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title">Contact Form</h4>
+				</div>
+				<div class="modal-body">
+
+					<form class="form-horizontal" id="emailForm" method="post" action="/demand/sendContactEmail">
+						<div class="form-group">
+							<label class="control-label col-md-4" for="first_name">First Name</label>
+							<div class="col-md-6">
+								<input type="text" class="form-control" id="first_name" name="firstname" placeholder="First Name"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-4" for="last_name">Last Name</label>
+							<div class="col-md-6">
+								<input type="text" class="form-control" id="last_name" name="lastname" placeholder="Last Name"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-4" for="email">Email Address</label>
+							<div class="col-md-6 input-group">
+								<span class="input-group-addon">@</span>
+								<input type="email" class="form-control" id="email" name="email" placeholder="Email Address"/>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="control-label col-md-4" for="comments">Comment</label>
+							<div class="col-md-6">
+								<textarea rows="6" class="form-control" id="comments" name="comments" placeholder="Your question or comment here"></textarea>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-md-6">
+								<button type="submit" value="Submit" id="send-email-btn" class="btn btn-custom pull-right">Send</button>
+							</div>
+						</div>
+					</form>
+
+				</div><!-- End of Modal body -->
+			</div><!-- End of Modal content -->
+		</div><!-- End of Modal dialog -->
+	</div><!-- End of Modal -->
 
     <!-- Navigation -->
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
@@ -125,6 +187,12 @@
     <section>
 
 		<div class="container" style="padding-top:20px;">
+
+			<!--successfully send email-->
+			<!--
+				<h3>We received your comment. Thanks for applied!</h3>
+			-->
+
 			<div class="row">
 				<h1 class="section-heading">Location</h1>
 				<div class="col-sm-6">
@@ -132,7 +200,7 @@
 						<h3><span class="glyphicon glyphicon-home" aria-hidden="true"></span> Address:</h3>               
 						<p style="margin-top:6%;line-height:5%">Krasnodar city, Russia</p>
 						<h3><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> E-Mail Address:</h3>
-						<p style="margin-top:6%;line-height:5%">test@mail.ru</p>
+						<p><a style="font-size:14pt; padding: 0;" href="#emailModal" role="button" class="btn btn-custom" data-toggle="modal">test@mail.ru</a></p>
 						<h3><span class="glyphicon glyphicon-hdd" aria-hidden="true"></span> GitHub:</h3>
 						<p style="margin-top:6%;line-height:5%"><a target="_blank" href="https://github.com/DanKantimirov/Kabor">source codes</a></p>
 					</div>
@@ -164,7 +232,7 @@
 									<br />
 									<i class="glyphicon glyphicon-user"></i><a target="_blank" href="https://www.linkedin.com/in/dan-kantimirov-881a03109/">linkedIn</a>
 									<br />
-									<i class="glyphicon glyphicon-hdd"></i><a target="_blank" href="https://github.com/DanKantimirov/">GibHub</a>
+									<i class="glyphicon glyphicon-hdd"></i><a target="_blank" href="https://github.com/DanKantimirov/">GitHub</a>
 									<br />
 									<i class="glyphicon glyphicon-gift"></i>October 01, 1991</p>
 							</div>
@@ -188,7 +256,7 @@
 									<br />
 									<i class="glyphicon glyphicon-globe"></i><a target="_blank" href="https://www.linkedin.com/in/alexander-boroda-a87349116/">linkedIn</a>
 									<br />
-									<i class="glyphicon glyphicon-hdd"></i><a target="_blank" href="https://github.com/red-batmen">GibHub</a>
+									<i class="glyphicon glyphicon-hdd"></i><a target="_blank" href="https://github.com/red-batmen">GitHub</a>
 									<br />
 									<i class="glyphicon glyphicon-gift"></i>October 29, 1989</p>
 							</div>
