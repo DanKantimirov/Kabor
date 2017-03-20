@@ -60,12 +60,6 @@ public class DataRepositoryImpl implements DataRepository{
 	
     @Value("${storage.outputFolderLocation}")
     private String outputFolderLocation;
-
-    @Value("${serverUser.contextPath}")
-    private String contextPath;
-
-    @Value("${serverUser.port}")
-    private String port;
 	
 	@Autowired
 	private NamedParameterJdbcTemplate namedparameterJdbcTemplate;
@@ -85,14 +79,23 @@ public class DataRepositoryImpl implements DataRepository{
 	
 	public String baseUrl;
 	
+	@Value("${serverUser.domainName}")
+	private String domainName;
+	@Value("${serverUser.useDomainName}")
+	private Boolean useDomainName;
+	
 	@PostConstruct
 	private void init() throws UnknownHostException{
 		Connector connector = ((TomcatEmbeddedServletContainer) appContext.getEmbeddedServletContainer()).getTomcat().getConnector();
 		String scheme = connector.getScheme();
-		String ip = InetAddress.getLocalHost().getHostAddress();
+		String domain = InetAddress.getLocalHost().getHostAddress();
+		if (useDomainName != null && useDomainName == true && domainName != null && !domainName.trim().equals("")) {
+			domain = domainName;
+		}
 		int port = connector.getPort();
 		String contextPath = appContext.getServletContext().getContextPath();
-		baseUrl = scheme + "://" + ip + ":" + port + contextPath;
+		baseUrl = scheme + "://" + domain + ":" + port + contextPath;
+		System.out.println(baseUrl);
 	}
 	
 	@Override
