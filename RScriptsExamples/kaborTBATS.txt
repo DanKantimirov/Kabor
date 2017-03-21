@@ -1,5 +1,5 @@
-kaborTBATS<-function(myvector,countDaysInYear,year,dayOfYear,forecastDuration){
-	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear ))
+kaborTBATS<-function(myvector,year,dayOfYear,forecastDuration){
+	myts <-ts(myvector,  freq=7, start=c(year,dayOfYear ))
 	mytstbats <- tbats(myts)
 	mytimeforecast1 <-forecast(mytstbats, h=forecastDuration)
 	myobj <- as.numeric(mytimeforecast1$mean)

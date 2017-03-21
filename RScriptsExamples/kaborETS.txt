@@ -1,5 +1,5 @@
-kaborETS<-function(myvector,countDaysInYear,year,dayOfYear,forecastDuration){
-	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear ))
+kaborETS<-function(myvector,year,dayOfYear,forecastDuration){
+	myts <-ts(myvector,  freq=7, start=c(year,dayOfYear ))
 	mytsets <- ets(myts)
 	mytimeforecast1 <-forecast(mytsets, h=forecastDuration)
 	myobj <- as.numeric(mytimeforecast1$mean)

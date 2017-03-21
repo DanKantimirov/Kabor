@@ -1,6 +1,6 @@
-kaborAutoChoose<-function(myvector,countDaysInYear,year,dayOfYear,forecastDuration){
+kaborAutoChoose<-function(myvector,year,dayOfYear,forecastDuration){
 
-	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear ))
+	myts <-ts(myvector,  freq=7, start=c(year,dayOfYear ))
 	
 	mytsets <- ets(myts)
 	mytsarima <- auto.arima(myts)

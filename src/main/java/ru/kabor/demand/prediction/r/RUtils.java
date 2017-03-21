@@ -100,14 +100,10 @@ public class RUtils {
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
 
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			
 			connection.voidEval("mytsets <- ets(myts)");
 			connection.voidEval("mytsarima <- auto.arima(myts)");
@@ -158,14 +154,10 @@ public class RUtils {
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
 
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			connection.voidEval("mytstbats <- tbats(myts)");
 			connection.voidEval("mytimeforecast1 <-forecast(mytstbats, h="+ forecastParameters.getForecastDuration() + ")");
 			
@@ -197,14 +189,10 @@ public class RUtils {
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
 
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			connection.voidEval("mytsets <- ets(myts)");
 			connection.voidEval("mytimeforecast1 <-forecast(mytsets, h="+ forecastParameters.getForecastDuration() + ")");
 			
@@ -250,14 +238,10 @@ public class RUtils {
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
 
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq="+countDaysInYear+", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			connection.voidEval("mytimeWinter <- HoltWinters(myts,beta=FALSE, gamma=FALSE)");
 			connection.voidEval("mytimeforecast1 <- forecast.HoltWinters(mytimeWinter, h="+ forecastParameters.getForecastDuration() + ")");
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
@@ -288,14 +272,10 @@ public class RUtils {
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
 
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			connection.voidEval("mytsarima <- auto.arima(myts)");
 			connection.voidEval("mytimeforecast1 <-forecast(mytsarima, h="+ forecastParameters.getForecastDuration() + ")");
 			
@@ -327,10 +307,7 @@ public class RUtils {
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
+			
 			Integer forecastDuration = forecastParameters.getForecastDuration();	//That method allows not more that 5 days prediction
 			if (forecastDuration > 5) {
 				forecastDuration = 5;
@@ -338,8 +315,8 @@ public class RUtils {
 
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
-			//connection.voidEval("mytimeforecast1 <- fcast(myts, method = 'GMDH', input = 3, layer = 2, f.number = "	+ forecastDuration + ", level = 95, tf = 'sigmoid')");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("mytimeforecast1 <- fcast(myts, method = 'GMDH', input = 3, layer = 2, f.number = "	+ forecastDuration + ", level = 95, tf = 'sigmoid')");
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = forecastREXP.asDoubles();
 
@@ -406,14 +383,9 @@ public class RUtils {
 			LocalDate startTraining = artTimeline.getTimeMoments().get(0).getTimeMoment();
 			Integer dayOfYear = startTraining.getDayOfYear();
 			Integer year = startTraining.getYear();
-			Integer countDaysInYear = 365;
-			
-			if(startTraining.isLeapYear()){
-				countDaysInYear = 366;
-			}
 			
 			connection.voidEval("myvector <- c(" + salesValues + ")");
-			connection.voidEval("myts <-ts(myvector,  freq=" + countDaysInYear + ", start=c(" + year + "," + dayOfYear + "))");
+			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			connection.voidEval("timeMoments = 1:length(myts)");
 			connection.voidEval("timeSeries = myts");
 			connection.voidEval("mySmoothing <- loess(timeSeries~timeMoments)");

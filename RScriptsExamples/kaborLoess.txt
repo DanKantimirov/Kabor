@@ -1,5 +1,5 @@
-kaborLoess<-function(myvector,countDaysInYear,year,dayOfYear){
-	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear))
+kaborLoess<-function(myvector,year,dayOfYear){
+	myts <-ts(myvector,  freq=7, start=c(year,dayOfYear))
 	timeMoments = 1:length(myts)
 	timeSeries = myts
 	mySmoothing <- loess(timeSeries~timeMoments)

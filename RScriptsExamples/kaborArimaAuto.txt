@@ -1,5 +1,5 @@
-kaborArimaAuto<-function(myvector,countDaysInYear,year,dayOfYear,forecastDuration){
-	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear ))
+kaborArimaAuto<-function(myvector,year,dayOfYear,forecastDuration){
+	myts <-ts(myvector,  freq=7, start=c(year,dayOfYear ))
 	mytsarima <- auto.arima(myts)
 	mytimeforecast1 <-forecast(mytsarima, h=forecastDuration)
 	myobj <- as.numeric(mytimeforecast1$mean)

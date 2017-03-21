@@ -1,5 +1,5 @@
-kaborNeuralNetwork<-function(myvector,countDaysInYear,year,dayOfYear,forecastDuration){
-	myts <-ts(myvector,  freq=countDaysInYear, start=c(year,dayOfYear))
+kaborNeuralNetwork<-function(myvector,year,dayOfYear,forecastDuration){
+	myts <-ts(myvector,  freq=7, start=c(year,dayOfYear))
 	mytimeforecast1 <- fcast(myts, method = 'GMDH', input = 3, layer = 2, f.number = forecastDuration, level = 95, tf = 'sigmoid')
 	myobj <- as.numeric(mytimeforecast1$mean)
 	return(myobj)
