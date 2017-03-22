@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -24,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.monitorjbl.xlsx.StreamingReader;
 
 import ru.kabor.demand.prediction.entity.ForecastParameter;
 import ru.kabor.demand.prediction.entity.Request;
@@ -96,7 +99,12 @@ public class RequestServiceImpl implements RequestService {
     public Request addNewRequest(MultipartFile file, Map<String, String[]> reqParams)
             throws InvalidHeaderException, IOException, InvalidFormatException, DataServiceException {
         LOG.debug("processing new request. validate ans save");
-        ExcelUtils.validateCsvHeaders(file);
+        String fileName = file.getOriginalFilename();
+        if(fileName.toLowerCase().contains(".xlsx")){
+        	ExcelUtils.validateXLSXHeaders(file);
+        } else{
+        	ExcelUtils.validateXLSHeaders(file);
+        }
         return createRequest(reqParams, file);
     }
 
@@ -108,52 +116,124 @@ public class RequestServiceImpl implements RequestService {
         	LOG.debug("Request "+request.getId()+" .Start importing record to db.");
             request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_DATA_IMPORT);
             requestRepository.saveAndFlush(request);
-
 			try {
+				//+++++++++++++++++++++++++++++++ IMPORT SALES REST+++++++++++++++++++++++++++++++++++++++
 				Path file = dataService.getStorageInputFilePath(request.getDocumentPath());
-				Workbook workbook = WorkbookFactory.create(file.toFile());
-				try {
-					Sheet sheet = workbook.getSheetAt(0);
-					Iterator<Row> iterator = sheet.rowIterator();
-					int rowCounter = 0;
-					List<SalesRest> saleRestList = new ArrayList<>();
-					while (iterator.hasNext()) {
-						LOG.debug("Request "+request.getId()+ " .Processing workbook. row:"+ rowCounter);
-						Row row = iterator.next();
-						rowCounter++;
-						if (rowCounter == 1) {
-							continue;	// ignore header
-						}
-
-						SalesRest saleRest = new SalesRest();
-						saleRest.setRequest(request);
-						String whsId = readValueFromXls(workbook, row, 0);
-						String artId = readValueFromXls(workbook, row, 1);
-						String dayId = readValueFromXls(workbook, row, 2, simpleDateFormat);
-						if(whsId==null || whsId.trim().equals("") || artId==null || artId.trim().equals("") || dayId==null || dayId.trim().equals("")){
-							continue;	//empty string
-						}
-						
-						saleRest.setWhsId(Integer.parseInt(whsId));
-						saleRest.setArtId(Integer.parseInt(artId));
-						saleRest.setDayId(LocalDate.parse(dayId, simpleDateTimeFormatter));
-						saleRest.setSaleQnty(Double.parseDouble(readValueFromXls(workbook, row, 3)));
-						saleRestList.add(saleRest);
-						if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {
-							LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
-							salesRestService.storeBathSalesRest(saleRestList);
-							saleRestList.clear();
-						}
-					}
-					if (saleRestList.size() > 0) {
-						LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
-						salesRestService.storeBathSalesRest(saleRestList);
-					}
-				} finally {
-					if(workbook!=null){
-						workbook.close();
-					}
+				String fileName = file.getFileName().toString();
+				
+				if(fileName.toLowerCase().contains(".xlsx")){
+					//XLSX file
+					StreamingReader reader = null;
+    				try {
+    					reader = StreamingReader.builder()
+    					        .rowCacheSize(300)    // number of rows to keep in memory (defaults to 10)
+    					        .bufferSize(6144)     // buffer size to use when reading InputStream to file (defaults to 1024)
+    					        .sheetIndex(0) 
+    					        .read(file.toFile());            // InputStream or File for XLSX file (required)
+    					Iterator<Row> iterator =  reader.iterator();
+    					int rowCounter = 0;
+    					List<SalesRest> saleRestList = new ArrayList<>();
+    					while (iterator.hasNext()) {
+    						LOG.debug("Request "+request.getId()+ " .Processing workbook. row:"+ rowCounter);
+    						Row row = iterator.next();
+    						rowCounter++;
+    						if (rowCounter == 1) {
+    							continue;	// ignore header
+    						}
+    
+    						SalesRest saleRest = new SalesRest();
+    						saleRest.setRequest(request);
+    						String whsId = null;
+    						String artId = null;
+    						String dayId = null;
+    						String saleQnty = null;
+    						
+    						Integer currentCellColumn = 0;
+    						for (Cell cellInRow : row) {
+    							if(currentCellColumn==0){
+    								whsId =  ExcelUtils.readCellWithoutFormulas(cellInRow,null);
+    							}else if (currentCellColumn==1){
+    								artId = ExcelUtils.readCellWithoutFormulas(cellInRow,null);
+    							}else if (currentCellColumn==2){
+    								dayId = ExcelUtils.readCellWithoutFormulas(cellInRow,simpleDateFormat);
+    							}else if (currentCellColumn==3){
+    								saleQnty = ExcelUtils.readCellWithoutFormulas(cellInRow,null);
+    							}
+    							currentCellColumn++;
+    						}
+    						
+    						if(whsId==null || whsId.trim().equals("") || artId==null || artId.trim().equals("") || dayId==null || dayId.trim().equals("")){
+    							continue;	//empty string
+    						}
+    						
+    						saleRest.setWhsId(Integer.parseInt(whsId));
+    						saleRest.setArtId(Integer.parseInt(artId));
+    						saleRest.setDayId(LocalDate.parse(dayId, simpleDateTimeFormatter));
+    						saleRest.setSaleQnty(Double.parseDouble(saleQnty));
+    						saleRestList.add(saleRest);
+    						if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {
+    							LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
+    							salesRestService.storeBathSalesRest(saleRestList);
+    							saleRestList.clear();
+    						}
+    					}
+    					if (saleRestList.size() > 0) {
+    						LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
+    						salesRestService.storeBathSalesRest(saleRestList);
+    					}
+    				} finally {
+    					if (reader != null) {
+    						reader.close();
+    					}
+    				}
+				} else{
+    				//XLS file			
+    				Workbook workbook = WorkbookFactory.create(file.toFile());
+    				try {
+    					Sheet sheet = workbook.getSheetAt(0);
+    					Iterator<Row> iterator = sheet.rowIterator();
+    					int rowCounter = 0;
+    					List<SalesRest> saleRestList = new ArrayList<>();
+    					while (iterator.hasNext()) {
+    						LOG.debug("Request "+request.getId()+ " .Processing workbook. row:"+ rowCounter);
+    						Row row = iterator.next();
+    						rowCounter++;
+    						if (rowCounter == 1) {
+    							continue;	// ignore header
+    						}
+    
+    						SalesRest saleRest = new SalesRest();
+    						saleRest.setRequest(request);
+    						String whsId = readValueFromXls(workbook, row, 0);
+    						String artId = readValueFromXls(workbook, row, 1);
+    						String dayId = readValueFromXls(workbook, row, 2, simpleDateFormat);
+    						if(whsId==null || whsId.trim().equals("") || artId==null || artId.trim().equals("") || dayId==null || dayId.trim().equals("")){
+    							continue;	//empty string
+    						}
+    						
+    						saleRest.setWhsId(Integer.parseInt(whsId));
+    						saleRest.setArtId(Integer.parseInt(artId));
+    						saleRest.setDayId(LocalDate.parse(dayId, simpleDateTimeFormatter));
+    						saleRest.setSaleQnty(Double.parseDouble(readValueFromXls(workbook, row, 3)));
+    						saleRestList.add(saleRest);
+    						if (rowCounter % PARSE_EXCEL_SALES_REST_LIST_SIZE == 0) {
+    							LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
+    							salesRestService.storeBathSalesRest(saleRestList);
+    							saleRestList.clear();
+    						}
+    					}
+    					if (saleRestList.size() > 0) {
+    						LOG.debug("Request "+request.getId()+" .SalesRest batch ready. saving it to db");
+    						salesRestService.storeBathSalesRest(saleRestList);
+    					}
+    				} finally {
+    					if(workbook!=null){
+    						workbook.close();
+    					}
+    				}
 				}
+				
+				//--------------------------------- IMPORT SALES REST ----------------------------------------
                 request.setStatus(ConstantUtils.REQUEST_DATA_IMPORTED);
                 requestRepository.saveAndFlush(request);
                 LOG.debug("Request "+request.getId()+" is successfully saved to db.");

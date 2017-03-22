@@ -11,6 +11,9 @@ import org.imgscalr.Scalr.Mode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.monitorjbl.xlsx.StreamingReader;
+
 import ru.kabor.demand.prediction.service.RequestServiceImpl;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
@@ -21,6 +24,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 
@@ -38,12 +42,12 @@ public class ExcelUtils {
 		validHeaders.add(3, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
 	}
 
-	/** Validation csv file headers
+	/** Validation xls file headers
 	 *
 	 * @param file
 	 * @throws Exception
      */
-	public static void validateCsvHeaders(MultipartFile file) throws InvalidHeaderException {
+	public static void validateXLSHeaders(MultipartFile file) throws InvalidHeaderException {
 		LOG.debug("prepare validation");
 		Workbook workbook = null;
 		try {
@@ -72,6 +76,47 @@ public class ExcelUtils {
 				} catch (IOException e) {
 					LOG.error("Can't close workbook:");
 				}
+			}
+		}
+	}
+	
+	/** Validation xlsx file headers
+	 *
+	 * @param file
+	 * @throws Exception
+    */
+	public static void validateXLSXHeaders(MultipartFile file) throws InvalidHeaderException {
+		LOG.debug("prepare validation");
+		StreamingReader reader = null;
+		try {
+			reader = StreamingReader.builder()
+			        .rowCacheSize(100)    // number of rows to keep in memory (defaults to 10)
+			        .bufferSize(4096)     // buffer size to use when reading InputStream to file (defaults to 1024)
+			        .sheetIndex(0) 
+			        .read(file.getInputStream());            // InputStream or File for XLSX file (required)
+			
+			List<String> requestHeaders = new ArrayList<>();
+			Iterator<Row> rowIterator = reader.iterator();
+
+			if (rowIterator.hasNext() == false) {
+				throw new InvalidHeaderException("Excel file is empty");
+			}
+			
+			Row row = rowIterator.next();
+			for (Cell cellInRow : row) {
+				String cellValue = readCellWithoutFormulas(cellInRow,null);
+			    requestHeaders.add(cellValue);
+			  }
+
+			if (!validHeaders.equals(requestHeaders)) {
+				LOG.error("Invalid header in Excel File:" + requestHeaders);
+				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+			}
+		} catch (IOException e) {
+			throw new InvalidHeaderException("Invalid header in Excel File:" + e.toString());
+		} finally {
+			if (reader != null) {
+				reader.close();
 			}
 		}
 	}
@@ -152,6 +197,36 @@ public class ExcelUtils {
 				}
 				break;
 			}
+		}
+		cellValue = cellValue.replace('\n', ' ');
+		cellValue = cellValue.replace('\r', ' ');
+		return cellValue;
+	}
+	
+	public static String readCellWithoutFormulas(Cell cell, SimpleDateFormat dateFormat){
+		if (cell == null) {
+			return "";
+		}
+		String cellValue = "";
+		switch (cell.getCellType()) {
+		case Cell.CELL_TYPE_STRING:
+			cellValue = cell.getStringCellValue();
+			break;
+		case Cell.CELL_TYPE_NUMERIC:
+			if ( dateFormat != null && HSSFDateUtil.isCellDateFormatted(cell)) {
+				Date cellDate = cell.getDateCellValue();
+				if (cellDate != null) {
+					cellValue = dateFormat.format(cellDate);
+				}
+			} else {
+				cellValue = formatDouble(cell.getNumericCellValue());
+			}
+			break;
+		case Cell.CELL_TYPE_BOOLEAN:
+			cellValue = String.valueOf(cell.getBooleanCellValue());
+			break;
+		case Cell.CELL_TYPE_FORMULA:
+			return "";
 		}
 		cellValue = cellValue.replace('\n', ' ');
 		cellValue = cellValue.replace('\r', ' ');

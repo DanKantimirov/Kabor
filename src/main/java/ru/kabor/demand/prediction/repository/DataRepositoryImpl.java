@@ -22,11 +22,11 @@ import javax.transaction.Transactional;
 
 import org.apache.catalina.connector.Connector;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -225,8 +225,6 @@ public class DataRepositoryImpl implements DataRepository{
 		return result;
 	}
 	
-
-	
 	@Override
 	public ResponceForecast getForecast(RequestForecastParameterSingle forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
 		ResponceForecast result = new ResponceForecast();
@@ -260,7 +258,7 @@ public class DataRepositoryImpl implements DataRepository{
 		Integer rowPredictionSheetNumber = 0;
 
 		try {
-			book = new HSSFWorkbook();
+			book = new XSSFWorkbook();
 
 			Sheet sheetSummary = book.createSheet("Summary");
 			Row row = sheetSummary.createRow(0);
@@ -299,7 +297,6 @@ public class DataRepositoryImpl implements DataRepository{
 				cell = row.createCell(3);
 				cell.setCellValue(info);
 			}
-			
 			
 			Sheet sheetPrediction = book.createSheet("Prediction");
 
@@ -388,7 +385,7 @@ public class DataRepositoryImpl implements DataRepository{
 			sheetPrediction.autoSizeColumn(4);
 			sheetPrediction.autoSizeColumn(5);
 			
-			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xls";;
+			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xlsx";;
 			
 			fullFilePath = outputFolderLocation + fileSeparator + fileName;
 			
