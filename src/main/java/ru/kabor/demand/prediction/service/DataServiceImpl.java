@@ -334,7 +334,7 @@ public class DataServiceImpl implements DataService {
 
 		executorService.shutdown();
 		try {
-			executorService.awaitTermination(2000, TimeUnit.SECONDS);
+			executorService.awaitTermination(20000, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			throw new DataServiceException("R is not answerring too long");
 		} finally{

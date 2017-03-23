@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,6 +84,8 @@ public class DataRepositoryImpl implements DataRepository{
 	private String domainName;
 	@Value("${serverUser.useDomainName}")
 	private Boolean useDomainName;
+	
+	DecimalFormat decimalFormat = new DecimalFormat("#.##");   
 	
 	@PostConstruct
 	private void init() throws UnknownHostException{
@@ -258,7 +261,7 @@ public class DataRepositoryImpl implements DataRepository{
 		Integer rowPredictionSheetNumber = 0;
 
 		try {
-			book = new XSSFWorkbook();
+			book = new SXSSFWorkbook(1000);
 
 			Sheet sheetSummary = book.createSheet("Summary");
 			Row row = sheetSummary.createRow(0);
@@ -319,12 +322,12 @@ public class DataRepositoryImpl implements DataRepository{
 			// +++++++++++++++++Total row count++++++++++++++++++
 			Integer predictionRowCount = responceForecastList.stream().mapToInt(e -> e.getTimeMomentsPrediction().size()).sum();
 
-			if (predictionRowCount > 65000) {
-				predictionRowCount = 65000;
+			if (predictionRowCount > 500000) {
+				predictionRowCount = 500000;
 			}
 
 			Integer maxPredictionPerForecast = predictionRowCount / responceForecastList.size();
-			Integer maxActualRowPeResponseForecast = (65500 - maxPredictionPerForecast) / responceForecastList.size();
+			Integer maxActualRowPeResponseForecast = (650000 - maxPredictionPerForecast) / responceForecastList.size();
 			// +++++++++++++++++Main For+++++++++++++++++++++++++
 			for (int k = 0; k < responceForecastList.size(); k++) {
 
@@ -368,7 +371,15 @@ public class DataRepositoryImpl implements DataRepository{
 					cell = row.createCell(2);
 					cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getTimeMoment().toString());
 					cell = row.createCell(3);
-					cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getSalesQnty());
+					Double saleQnty = responceForecast.getTimeMomentsPrediction().get(i).getSalesQnty();
+					
+					if (saleQnty == null || saleQnty.equals(0)) {
+						cell.setCellValue(0);
+					} else if (saleQnty <= 0.45) {
+						cell.setCellValue(0);
+					} else {
+						cell.setCellValue(Math.floor(saleQnty * 100)/100);
+					}
 
 					cell = row.createCell(5);
 					cell.setCellValue(1);
@@ -376,14 +387,6 @@ public class DataRepositoryImpl implements DataRepository{
 				}
 			}
 			//+++++++++++++++++Main For+++++++++++++++++++++++++
-
-			// Меняем размер столбца
-			sheetPrediction.autoSizeColumn(0);
-			sheetPrediction.autoSizeColumn(1);
-			sheetPrediction.autoSizeColumn(2);
-			sheetPrediction.autoSizeColumn(3);
-			sheetPrediction.autoSizeColumn(4);
-			sheetPrediction.autoSizeColumn(5);
 			
 			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xlsx";;
 			

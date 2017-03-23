@@ -27,20 +27,22 @@ public class StorageFolderCleaner {
 	@Scheduled(cron="0 0 0 * * ?")
 	public void doSomething() throws ParseException {
 		if(shouldMakeCleaning){
+			LOG.warn("StorageFolderCleaner: started");
     		Long dayInMs = 1000 * 60 * 60 * 24L;
     		Date date = new Date(System.currentTimeMillis() - (3 * dayInMs));
     		List<String> attachmentPath = dataService.getAttachmentPathListByResponseTimeBeforeMoment(date);
     		for (String fileName : attachmentPath) {
     			dataService.deleteFileStorageOutput(fileName);
     		}
-    		LOG.debug("attachmentPath:" + attachmentPath.toString());
+    		LOG.warn("attachmentPath:" + attachmentPath.toString());
     		List<String> documentPath = dataService.getDocumentPathListByResponseTimeBeforeMoment(date);
     		for (String fileName : documentPath) {
     			dataService.deleteFileStorageInput(fileName);
     		}
-    		LOG.debug("documentPath:" + documentPath.toString());
+    		LOG.warn("documentPath:" + documentPath.toString());
     		Integer deletedRequests = dataService.deleteRequestByResponseTimeBeforeMoment(date);
-    		LOG.debug("deletedRequests:" + deletedRequests);
+    		LOG.warn("deletedRequests:" + deletedRequests);
+    		LOG.warn("StorageFolderCleaner: finished");
 		}
 	}
 }
