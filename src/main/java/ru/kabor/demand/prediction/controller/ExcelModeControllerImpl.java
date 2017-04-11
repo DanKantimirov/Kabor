@@ -2,12 +2,15 @@ package ru.kabor.demand.prediction.controller;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -35,6 +38,7 @@ import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.VerifyCaptcha;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
+/** Implementation of ExcelModeController*/
 @Controller
 public class ExcelModeControllerImpl implements ExcelModeController {
 	
@@ -53,53 +57,59 @@ public class ExcelModeControllerImpl implements ExcelModeController {
 	@Value("${serverUser.useRealCaptch}")
 	Boolean isUseRealCaptcha;
 	
-	/** Return list of already downloaded files and redirect to form of adding new
-	 * @throws IOException
-	 * @throws DataServiceException*/
-    @GetMapping("/excelMode")
+	@Value("${storage.maxFileSizeMB}")
+	Integer maxFileSizeMB;
+	
+	private static final Logger LOG = LoggerFactory.getLogger(ExcelModeControllerImpl.class);
+	
+	@Override
+    @GetMapping("/excelMode/uploadedFiles")
     public String listUploadedFiles(Model model) throws IOException, DataServiceException {
         model.addAttribute("files", dataService
-                .getStorageInputFilePathAll()
+                .getFilePathAllFromInputStorage()
                 .map(path ->
                         MvcUriComponentsBuilder
                                 .fromMethodName(ExcelModeControllerImpl.class, "serveFile", path.getFileName().toString())
                                 .build().toString())
                 .collect(Collectors.toList()));
-        return "uploadForm";
+        return "uploadFormForecast";
     }
     
-	/** Return file by path from input storage
-	 * @throws DataServiceException*/
+	@Override
+    @GetMapping("/excelMode")
+    public String getUploadFormForecast(Model model){
+        return "uploadFormForecast";
+    }
+    
+    @Override
+    @GetMapping("/excelModeElastic")
+    public String getUploadElasticity(Model model){
+        return "uploadElasticity";
+    }
+    
+    @Override
     @GetMapping("excelMode/files/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> serveFile(@PathVariable String filename) throws DataServiceException {
-        Resource file = dataService.getStorageInputFileAsResourse(filename);
+        Resource file = dataService.getFileFromInputStorageAsResourse(filename);
         return ResponseEntity
                 .ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+file.getFilename()+"\"")
                 .body(file);
     }
     
-	/** Return file by path from output storage
-	 * @throws DataServiceException*/
+	@Override
     @GetMapping("excelMode/filesOutput/{filename:.+}")
     @ResponseBody
     public ResponseEntity<Resource> serveFileOutput(@PathVariable String filename) throws DataServiceException {
-        Resource file = dataService.getStorageOutputFileAsResourse(filename);
+        Resource file = dataService.getFileFromOutputStorageAsResourse(filename);
         return ResponseEntity
                 .ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+file.getFilename()+"\"")
                 .body(file);
     }
 
-	/**
-	 * Send user comment to our email
-	 * @param firstname
-	 * @param lastname
-	 * @param email
-	 * @param comments
-	 * @return
-	 */
+	@Override
     @PostMapping("/sendContactEmail")
     public String sendContactEmail(
 			@RequestParam(name="firstname") String firstname,
@@ -111,20 +121,10 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     	return "redirect:/contactUs.html";
 	}
 
-	/** Send file to server and start making forecasting
-	 * @param file Excel file with sales and rests
-	 * @param defaultSettingsInput If it is not null or 0: 7 days, WINTER_HOLT, none smoothing
-	 * @param forecastDuration Duration of forecast
-	 * @param forecastMethod Method of forecasting
-	 * @param smoothType Method of smoothing raw data
-	 * @param email User's email
-	 * @param gRecaptchaResponse Response from captcha
-	 * @throws DataServiceException
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException */
     @PostMapping("/excelMode")
     public String handleFileUpload(
     		@RequestParam(name="fileInput", required=true) MultipartFile file,
+    		@RequestParam(name="elasticityTypeInput", required=false) String elasticityTypeInput,
     		@RequestParam(name="defaultSettingsInput", required=true) String defaultSettingsInput,
     		@RequestParam(name="predictionDaysInput", required=false) Integer forecastDuration,
     		@RequestParam(name="predictionMethod", required=false) FORECAST_METHOD forecastMethod,
@@ -139,20 +139,72 @@ public class ExcelModeControllerImpl implements ExcelModeController {
     		throw new DataServiceException("Wrong captcha");
     	}
 		try {
-			Request reqEnt = requestService.addNewRequest(file, request.getParameterMap());
+			if (file.getSize() > (maxFileSizeMB * 1024 * 1024)) {
+				throw new IllegalArgumentException("Size of file too big!!!");
+			}
+			Map<String, String[]> requestParams = request.getParameterMap();
+			Request reqEnt = requestService.addNewRequest(file, requestParams);
 			emailSender.sendMessageRequestAdded((long) reqEnt.getId());
 			redirectAttributes.addFlashAttribute("message", "We have already started forecast processing!"
 			+ " You will receive a notification to email when the process is complete.");
-		} catch (InvalidHeaderException exception) {
-			redirectAttributes.addFlashAttribute("message", "Your file format is invalid. Check file columns name.");
-		} catch (InvalidFormatException exception) {
+			redirectAttributes.addFlashAttribute("color", "green");
+		} catch (InvalidHeaderException e) {
+			redirectAttributes.addFlashAttribute("message", "Format of your file is invalid! Please, check columns name.");
+			redirectAttributes.addFlashAttribute("color", "red");
+		} catch (IllegalArgumentException e) {
+			redirectAttributes.addFlashAttribute("message", "Your file is too big. Allowed only " + maxFileSizeMB + " MB.");
+			redirectAttributes.addFlashAttribute("color", "red");
+		} catch (InvalidFormatException e) {
 			redirectAttributes.addFlashAttribute("message", "Unable process your file. Perhaps it has been broken.");
+			redirectAttributes.addFlashAttribute("color", "red");
 		} catch (MessagingException e) {
-			redirectAttributes.addFlashAttribute("message", "File uploaded. Forecast starting. Cant send email.");
+			redirectAttributes.addFlashAttribute("message", "Your file is uploaded. You will get result soon. Can't send email.");
+			redirectAttributes.addFlashAttribute("color", "orange");
 		} catch (EmailSenderException e) {
-			e.printStackTrace();
+			LOG.error("Can't send email", e);
 		}
 		return "redirect:/excelMode";
     }
-
+    
+    @Override
+    @PostMapping("/excelModeElastic")
+    public String handleFileUploadElasticity(
+    		@RequestParam(name="fileInput", required=true) MultipartFile file,
+    		@RequestParam(name="inputEmail", required=true) String email,
+    		@RequestParam(name="g-recaptcha-response", required=true) String gRecaptchaResponse,
+			HttpServletRequest request,
+    		RedirectAttributes redirectAttributes) throws DataServiceException, UnsupportedEncodingException, IOException {
+    	
+    	boolean verify = VerifyCaptcha.verify(captchaSecretKey, gRecaptchaResponse, isUseRealCaptcha);
+    	if(!verify){
+    		throw new DataServiceException("Wrong captcha");
+    	}
+		try {
+			if (file.getSize() > (maxFileSizeMB * 1024 * 1024)) {
+				throw new IllegalArgumentException("Size of file too big!!!");
+			}
+			Map<String, String[]> requestParams = request.getParameterMap();
+			requestParams.put("elasticityTypeInput", new String[] { "ELASTICITY" });
+			Request reqEnt = requestService.addNewRequest(file, requestParams);
+			emailSender.sendMessageRequestAdded((long) reqEnt.getId());
+			redirectAttributes.addFlashAttribute("message",
+					"We have already started calculating elasticity!" + " You will receive a notification to email when the process is complete.");
+			redirectAttributes.addFlashAttribute("color", "green");
+		} catch (InvalidHeaderException e) {
+			redirectAttributes.addFlashAttribute("message", "Format of your file is invalid! Please, check columns name.");
+			redirectAttributes.addFlashAttribute("color", "red");
+		} catch (IllegalArgumentException e) {
+			redirectAttributes.addFlashAttribute("message", "Your file is too big. Allowed only " + maxFileSizeMB + " MB.");
+			redirectAttributes.addFlashAttribute("color", "red");
+		} catch (InvalidFormatException e) {
+			redirectAttributes.addFlashAttribute("message", "Unable process your file. Perhaps it has been broken.");
+			redirectAttributes.addFlashAttribute("color", "red");
+		} catch (MessagingException e) {
+			redirectAttributes.addFlashAttribute("message", "Your file is uploaded. You will get result soon. Can't send email.");
+			redirectAttributes.addFlashAttribute("color", "orange");
+		} catch (EmailSenderException e) {
+			LOG.error("Can't send email", e);
+		}
+		return "redirect:/excelModeElastic";
+    }
 }

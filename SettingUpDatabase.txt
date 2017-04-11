@@ -2,11 +2,13 @@
 
 /* drop table demand_predictor.v_sales_rest;
 drop table demand_predictor.v_forecast_parameter;
+drop table demand_predictor.v_elasticity_parameter;
 drop table demand_predictor.v_request; */
 
 /* Table v_request */
 CREATE TABLE demand_predictor.v_request (
   request_id INT NOT NULL AUTO_INCREMENT,
+  request_type VARCHAR(25) NOT NULL,
   email VARCHAR(45) NOT NULL,
   send_date_time DATETIME NOT NULL,
   response_date_time DATETIME NULL,
@@ -36,6 +38,19 @@ CREATE TABLE demand_predictor.v_forecast_parameter (
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;
 
+/* Table v_elasticity_parameter */
+CREATE TABLE demand_predictor.v_elasticity_parameter (
+  id INT NOT NULL AUTO_INCREMENT,
+  request_id INT NOT NULL,
+  PRIMARY KEY (id),
+  INDEX request_id_index (request_id),
+  FOREIGN KEY (request_id)
+        REFERENCES demand_predictor.v_request(request_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8;
+
 /* Table v_sales_rest */
 CREATE TABLE demand_predictor.v_sales_rest (
   id INT NOT NULL AUTO_INCREMENT,
@@ -45,6 +60,7 @@ CREATE TABLE demand_predictor.v_sales_rest (
   day_id DATE NOT NULL,
   sale_qnty DOUBLE NULL,
   rest_qnty DOUBLE NULL,
+  price DOUBLE NULL,
   PRIMARY KEY (id),
   INDEX request_id_index (request_id),
   FOREIGN KEY (request_id)

@@ -39,30 +39,24 @@
 				var inputRequestId=$("#requestInput").val();
 				var inputWhsIdBulk=$("#whsInputBulk").val();
 				var inputArtIdBulk=$("#artInputBulk").val();
-				var startDay=$("#dateStartInput").val();
-				var finishDay=$("#dateEndInput").val();
-				var duration=$("#predictionDaysInput").val();
-				var predictMethod = $("#predictionMethod").val();
-				var useSmooth = $("#useSmoothInput").val();
+				var inputUseEmail=$("#useEmailInput").val();
+				var inputEmail=$("#EmailInput").val();
 				
 				$.ajax({
-					url : 'forecastmultiple',
+					url : 'elasticitymultiple',
 					timeout: 180000,
 					type: 'POST',
 					dataType: 'text',
 					contentType: 'application/json',
 					mimeType: 'application/json',
 									
-					data: JSON.stringify(						
+					data: JSON.stringify(				
 						{
 							requestId:inputRequestId,
 							whsIdBulk:inputWhsIdBulk,
 							artIdBulk:inputArtIdBulk,
-							trainingStart:startDay,
-							trainingEnd:finishDay,
-							forecastDuration:duration,
-							forecastMethod:predictMethod,
-							smoothType:useSmooth
+							isSendByEmail:inputUseEmail,
+							email:inputEmail
 						}
 					),
 					
@@ -89,6 +83,17 @@
 				});
 			}
 			
+			jQuery().ready(function() {
+				//Default settings
+				$("#useEmailInput").click(function() {
+					if( $("#useEmailInput option:selected").text()=="NO" ){
+						$("#EmailInput").prop("disabled",true);
+					} else{
+						$("#EmailInput").prop("disabled",false);
+					}
+				});
+			});
+			
 		</script>
 	</head>
 	
@@ -105,7 +110,7 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			  </button>
-			  <a class="navbar-brand" href="#">Admin multiple mode</a>
+			  <a class="navbar-brand" href="#">Admin elasticity mode</a>
 			</div>
 		
 			<!-- Collect the nav links, forms, and other content for toggling -->
@@ -128,7 +133,7 @@
 			<form class="form-horizontal" id="contactForm"  onsubmit="doAjax();return false;">
 				<fieldset>
 					<!-- Form Name -->
-					<legend>Forecasting of demand for many shops and many products by requestId.</legend>
+					<legend>Calculating of elasticity for many shops and many products by requestId.</legend>
 					
 					<!-- Text input-->
 					<div class="form-group">
@@ -156,74 +161,25 @@
 						<span class="help-block">For example: 111;222;333</span> 
 					  </div>
 					</div>
-
-					<!-- Text input-->
-					<div class="form-group">
-					  <label class="col-md-4 control-label" for="dateStartInput">First date of analysis</label>  
-					  <div class="col-md-4">
-					 <input id="dateStartInput" name="dateStartInput" data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md" required="" type="text">
-					  <span class="help-block">First date of analysis </span>  
-					 </div>
-					</div>
-
-					<!-- Text input-->
-					<div class="form-group">
-					  <label class="col-md-4 control-label" for="dateEndInput">Start date of forecasting</label>  
-					  <div class="col-md-4">
-					  <input id="dateEndInput" name="dateEndInput"  data-provide='datepicker' data-date-format='yyyy-mm-dd' class="form-control input-md" required="" type="text">
-					  <span class="help-block">First date of forecasting and the last date of analysis</span>  
-					  </div>
-					</div>
-
-					<!-- Select Basic -->
-					<div class="form-group">
-					  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
-					  <div class="col-md-4">
-						<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
-						  <option value="1">1</option>
-						  <option value="2">2</option>
-						  <option value="3">3</option>
-						  <option value="4">4</option>
-						  <option value="5">5</option>
-						  <option value="6">6</option>
-						  <option value="7">7</option>
-						  <option value="8">8</option>
-						  <option value="9">9</option>
-						  <option value="10">10</option>
-						  <option value="11">11</option>
-						  <option value="12">12</option>
-						  <option value="13">13</option>
-						  <option value="14">14</option>
-						</select>
-						<span class="help-block">Count days in forecast</span>  
-					  </div>
-					</div>
 					
 					<!-- Select Basic -->
 					<div class="form-group">
-					  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
+					  <label class="col-md-4 control-label" for="useEmailInput">Send to Email</label>
 					  <div class="col-md-4">
-						<select id="predictionMethod" name="predictionMethod" class="form-control">
-							<option value="AUTO_CHOOSE">AUTO CHOOSE (BEST FIT)</option>
-							<option value="ARIMA_AUTO">ARIMA</option>
-							<option value="ETS">EXPONENTIAL SMOOTHING (ETS)</option>
-							<option value="TBATS">TBATS</option>
-							<option value="HOLT_WINTERS">HOLT-WINTERS</option>
-							<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
+						<select id="useEmailInput" name="useEmailInput" class="form-control">
+						  <option value="true">YES</option>
+						  <option value="false">NO</option>
 						</select>
-						<span class="help-block">Method of demand forecasting</span> 
+						<span class="help-block">Should send result to email</span>  
 					  </div>
 					</div>
 					
-					<!-- Select Basic -->
+					<!-- EmailInput -->
 					<div class="form-group">
-					  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
+					  <label class="col-md-4 control-label" for="EmailInput">Email: </label>  
 					  <div class="col-md-4">
-						<select id="useSmoothInput" name="useSmoothInput" class="form-control">
-						  <option value="YES">30% of deviation</option>
-						  <option value="NO">None</option>
-						</select>
-						<span class="help-block">Method of deleting extremums</span>  
+					  <input id="EmailInput" name="EmailInput" placeholder="somemail@yahoo.com" class="form-control input-md" type="text"></input>
+					  <span class="help-block">Email for sending result of calculating</span>  
 					  </div>
 					</div>
 					

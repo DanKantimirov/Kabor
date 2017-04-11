@@ -31,11 +31,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import ru.kabor.demand.prediction.entity.RequestElasticityParameterMultiple;
+import ru.kabor.demand.prediction.entity.RequestElasticityParameterSingle;
+import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterSingle;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
+import ru.kabor.demand.prediction.entity.ResponceElasticity;
 import ru.kabor.demand.prediction.entity.ResponceForecast;
+import ru.kabor.demand.prediction.entity.ResponceForecastAndElasticity;
 import ru.kabor.demand.prediction.repository.DataRepository;
 
+/** Implementation for DataService */
 @Component
 public class DataServiceImpl implements DataService {
 
@@ -53,10 +59,51 @@ public class DataServiceImpl implements DataService {
 	@Value("${parallel.countThreads}")
 	private Integer countThreads;
 	
+	private Integer maxAvaitTermination = 20000;
 	
 	@PostConstruct
 	private void postConstruct() throws DataServiceException{
-		this.sturpUpFileStorage();
+		this.sturpUpFileStorages();
+	}
+	
+	@Override
+	public List<ResponceElasticity> getElasticityMultipleDatabaseMode(RequestElasticityParameterMultiple elasticityParameterMultiple) throws DataServiceException {
+		String whsIdBulk = elasticityParameterMultiple.getWhsIdBulk();
+		String artIdBulk = elasticityParameterMultiple.getArtIdBulk();
+		
+		if (whsIdBulk == null || whsIdBulk.trim().equals("")) {
+			LOG.error("whs_id can't be empty" + elasticityParameterMultiple.toString());
+			throw new DataServiceException("whs_id can't be empty");
+		}
+		if (artIdBulk == null || artIdBulk.trim().equals("")) {
+			LOG.error("art_id can't be empty" + elasticityParameterMultiple.toString());
+			throw new DataServiceException("art_id can't be empty");
+		}
+		
+		whsIdBulk = whsIdBulk.trim();
+		artIdBulk = artIdBulk.trim();
+		
+		Pattern patternForCheck = Pattern.compile("^[0-9;]+");  
+        Matcher matcherForCheck = patternForCheck.matcher(whsIdBulk);  
+		
+		if(!matcherForCheck.matches()){
+			throw new DataServiceException("only (0-9 or ;) are allowed for whs_id");
+		}
+		
+        matcherForCheck = patternForCheck.matcher(artIdBulk);  
+		
+		if(!matcherForCheck.matches()){
+			throw new DataServiceException("only (0-9 or ;) are allowed for art_id");
+		}
+		
+		List<ResponceElasticity> elasticityList = null;
+		try {
+			SqlRowSet salesRowSet = dataRepository.getSalesMultipleWithPrices(elasticityParameterMultiple);
+			elasticityList = dataRepository.getElasticityMultiple(elasticityParameterMultiple, salesRowSet);
+		} catch (Exception e) {
+			throw new DataServiceException(e.toString());
+		}
+		return elasticityList;
 	}
 	
 	@Override
@@ -109,13 +156,202 @@ public class DataServiceImpl implements DataService {
 		
 		List<ResponceForecast> forecastList = null;
 		try {
-			SqlRowSet salesRowSet = dataRepository.getSalesMultiple(forecastParameters);
+			SqlRowSet salesRowSet = dataRepository.getSalesMultipleWithPrices(forecastParameters);
 			forecastList = dataRepository.getForecastMultiple(forecastParameters, salesRowSet);
 		} catch (Exception e) {
 			throw new DataServiceException(e.toString());
 		}
 		return forecastList;
 	}
+	
+	@Override
+	public List<ResponceElasticity> getElasticitytExcelMode(Integer requestId) throws DataServiceException {
+		List<ResponceElasticity> responceList = new ArrayList<>();
+		List<RequestElasticityParameterSingle> requestElasticityParameterSingleList = dataRepository.getRequestElasticityParameterSingleList(requestId);
+		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
+		List<Future<ResponceElasticity>> futureResponsetList = new ArrayList<Future<ResponceElasticity>>();
+		
+		for (int i = 0; i < requestElasticityParameterSingleList.size(); i++) {
+			RequestElasticityParameterSingle elasticityParameter = requestElasticityParameterSingleList.get(i);
+			Future<ResponceElasticity> futureResponse = executorService.submit(() -> {
+				return this.getElasticitySingleDatabaseMode(elasticityParameter);
+			});
+			futureResponsetList.add(futureResponse);
+		}
+		
+		executorService.shutdown();
+		try {
+			executorService.awaitTermination(maxAvaitTermination, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			throw new DataServiceException("R is not answerring too long");
+		} finally{
+			if(!executorService.isShutdown()){
+				executorService.shutdownNow();
+			}
+		}
+		
+		//Getting results from tasks
+		for (Future<ResponceElasticity> futureResponse : futureResponsetList) {
+			ResponceElasticity responce;
+			try {
+				responce = futureResponse.get();
+				responceList.add(responce);
+				//Mark that request as completed
+				requestElasticityParameterSingleList.removeIf(e->e.getArtId().equals(responce.getArtId()) && e.getWhsId().equals(responce.getWhsId()));
+				
+			} catch (Exception e) {
+				LOG.error("Getting elasticity result exception: " + e.toString());
+			}
+		}
+		
+		//Making complete response
+		for(RequestElasticityParameterSingle requestParameter : requestElasticityParameterSingleList){
+			ResponceElasticity responce = new ResponceElasticity(requestParameter.getWhsId(), requestParameter.getArtId());
+			responce.setErrorMessage("Couldn't calculate elasticity");
+			responceList.add(responce);
+		}
+		return responceList;
+	}
+	
+	
+	@Override
+	public List<ResponceForecastAndElasticity> getForecastAndElasticitytExcelMode(Integer requestId) throws DataServiceException {
+		List<ResponceForecastAndElasticity> responceList = new ArrayList<>();
+		List<RequestForecastAndElasticityParameterSingle> requestForecastAndElasticityParameterSingleList = dataRepository.getRequestForecastAndElasticityParameterSingleList(requestId);
+		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
+		List<Future<ResponceForecastAndElasticity>> futureResponsetList = new ArrayList<Future<ResponceForecastAndElasticity>>();
+		
+		for (int i = 0; i < requestForecastAndElasticityParameterSingleList.size(); i++) {
+			RequestForecastAndElasticityParameterSingle requestForecastAndElasticityParameter = requestForecastAndElasticityParameterSingleList.get(i);
+			Future<ResponceForecastAndElasticity> futureResponse = executorService.submit(() -> {
+				return this.getForecastAndElasticitySingleDatabaseMode(requestForecastAndElasticityParameter);
+			});
+			futureResponsetList.add(futureResponse);
+		}
+		
+		executorService.shutdown();
+		try {
+			executorService.awaitTermination(maxAvaitTermination, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			throw new DataServiceException("R is not answerring too long");
+		} finally{
+			if(!executorService.isShutdown()){
+				executorService.shutdownNow();
+			}
+		}
+		
+		//Getting results from tasks
+		for (Future<ResponceForecastAndElasticity> futureResponse : futureResponsetList) {
+			ResponceForecastAndElasticity responce;
+			try {
+				responce = futureResponse.get();
+				responceList.add(responce);
+				//Mark that request as completed
+				requestForecastAndElasticityParameterSingleList.removeIf(e->e.getRequestForecastParameter().getArtId().equals(responce.getResponceForecast().getArtId()) && e.getRequestForecastParameter().getWhsId().equals(responce.getResponceForecast().getWhsId()));
+			} catch (Exception e) {
+				LOG.error("Getting elasticity result exception: " + e.toString());
+			}
+		}
+		
+		return responceList;
+	}
+
+	@Override
+	public ResponceElasticity getElasticitySingleDatabaseMode(RequestElasticityParameterSingle elasticityParameter) {
+		ResponceElasticity elasticity;
+		
+		Integer requestId = elasticityParameter.getRequestId();
+		Integer whsId = elasticityParameter.getWhsId();
+		Integer artId = elasticityParameter.getArtId();
+		
+		elasticity = new ResponceElasticity(whsId, artId);
+		
+		if (requestId == null) {
+			LOG.error("request_id can't be empty" + elasticityParameter.toString());
+			elasticity.setErrorMessage("request_id can't be empty");
+			return elasticity;
+		}
+
+		if (whsId == null) {
+			LOG.error("whs_id can't be empty" + elasticityParameter.toString());
+			elasticity.setErrorMessage("whs_id can't be empty");
+			return elasticity;
+		}
+		if (artId == null) {
+			LOG.error("art_id can't be empty" + elasticityParameter.toString());
+			elasticity.setErrorMessage("art_id can't be empty");
+			return elasticity;
+		}
+		
+		try {
+			SqlRowSet salesRowSet = dataRepository.getSalesWithPrices(elasticityParameter);
+			elasticity = dataRepository.getElasticity(elasticityParameter, salesRowSet);
+			return elasticity;
+		} catch (Exception e) {
+			elasticity.setErrorMessage(e.toString());
+			return elasticity;
+		}
+	}
+	
+	@Override
+	public ResponceForecastAndElasticity getForecastAndElasticitySingleDatabaseMode(RequestForecastAndElasticityParameterSingle forecastAndElasticityParameters) {
+		Integer requestId = forecastAndElasticityParameters.getRequestForecastParameter().getRequestId();
+		Integer whsId = forecastAndElasticityParameters.getRequestForecastParameter().getWhsId();
+		Integer artId = forecastAndElasticityParameters.getRequestForecastParameter().getArtId();
+		String trainingStart = forecastAndElasticityParameters.getRequestForecastParameter().getTrainingStart();
+		String trainingEnd = forecastAndElasticityParameters.getRequestForecastParameter().getTrainingEnd();
+		
+		ResponceElasticity elasticity = new ResponceElasticity(whsId, artId);
+		ResponceForecast forecast = new ResponceForecast(whsId, artId);
+		
+		ResponceForecastAndElasticity result = new ResponceForecastAndElasticity(forecast, elasticity);
+		
+		if (requestId == null) {
+			LOG.error("request_id can't be empty" + forecastAndElasticityParameters.getRequestForecastParameter().toString());
+			forecast.setErrorMessage("request_id can't be empty");
+			return result;
+		}
+
+		if (whsId == null) {
+			LOG.error("whs_id can't be empty" + forecastAndElasticityParameters.getRequestForecastParameter().toString());
+			forecast.setErrorMessage("whs_id can't be empty");
+			return result;
+		}
+		if (artId == null) {
+			LOG.error("art_id can't be empty" + forecastAndElasticityParameters.getRequestForecastParameter().toString());
+			forecast.setErrorMessage("art_id can't be empty");
+			return result;
+		}
+		if (trainingStart == null || trainingStart.trim().equals("")) {
+			LOG.error("training_start can't be empty" + forecastAndElasticityParameters.getRequestForecastParameter().toString());
+			forecast.setErrorMessage("training_start can't be empty");
+			return result;
+		}
+		if (trainingEnd == null || trainingEnd.trim().equals("")) {
+			LOG.error("training_end can't be empty" + forecastAndElasticityParameters.getRequestForecastParameter().toString());
+			forecast.setErrorMessage("training_end can't be empty");
+			return result;
+		}
+		
+		LocalDate startDate = LocalDate.parse(trainingStart);
+		LocalDate endDate = LocalDate.parse(trainingEnd);
+		
+		if(!startDate.isBefore(endDate)){
+			LOG.error("Start date of forecasting is earlier than First date of analysis: " + forecastAndElasticityParameters.getRequestForecastParameter().toString());
+			forecast.setErrorMessage("Start date of forecasting is earlier than First date of analysis");
+			return result;
+		}
+		
+		try {
+			SqlRowSet salesRowSet = dataRepository.getSalesWithPrices(forecastAndElasticityParameters.getRequestForecastParameter());
+			result = dataRepository.getForecastAndElasticity(forecastAndElasticityParameters, salesRowSet);
+			return result;
+		} catch (Exception e) {
+			elasticity.setErrorMessage(e.toString());
+			return result;
+		}
+	}
+	
 
 	@Override
 	public ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters){
@@ -127,7 +363,6 @@ public class DataServiceImpl implements DataService {
 		Integer artId = forecastParameters.getArtId();
 		String trainingStart = forecastParameters.getTrainingStart();
 		String trainingEnd = forecastParameters.getTrainingEnd();
-		
 		forecast = new ResponceForecast(whsId, artId);
 		
 		if (requestId == null) {
@@ -167,7 +402,7 @@ public class DataServiceImpl implements DataService {
 		}
 		
 		try {
-			SqlRowSet salesRowSet = dataRepository.getSales(forecastParameters);
+			SqlRowSet salesRowSet = dataRepository.getSalesWithPrices(forecastParameters);
 			forecast = dataRepository.getForecast(forecastParameters, salesRowSet);
 			return forecast;
 		} catch (Exception e) {
@@ -177,41 +412,34 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public String getForecastFileSingleDatabaseMode(ResponceForecast responceForecast) throws DataServiceException  {
-		String result = dataRepository.getForecastFile(responceForecast);
+	public String createForecastResultFileSingleDatabaseMode(ResponceForecast responceForecast) throws DataServiceException  {
+		String result = dataRepository.createForecastResultFile(responceForecast);
 		return result;
 	}
 
 	@Override
-	public String getForecastFileMultipleDatabaseMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
-		String result = dataRepository.getForecastFileMultiple(responceForecastList);
+	public String createForecastResultFileMultipleDatabaseMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
+		String result = dataRepository.createForecastMultipleResultFile(responceForecastList);
 		return result;
 	}
 	
-	/** If folder for keeping excel doesn't exists it creates that method
-	 * @throws DataServiceException*/
 	@Override
-	public void sturpUpFileStorage() throws DataServiceException {
+	public void sturpUpFileStorages() throws DataServiceException {
 		try {
-			
 			if(Files.notExists(this.inputFolderLocation, LinkOption.NOFOLLOW_LINKS)){
 				Files.createDirectory(this.inputFolderLocation);
 			}
-			
 			if(Files.notExists(this.outputFolderLocation, LinkOption.NOFOLLOW_LINKS)){
 				Files.createDirectory(this.outputFolderLocation);
 			}
-			
 		} catch (IOException e) {
 			LOG.error("Could not initialize storage:" + e);
 			throw new DataServiceException("Could not initialize storage:" + e);
 		}
 	}
 	
-    /** Put one file into storage folder
-     * @throws DataServiceException*/
 	@Override
-	public String putFile(MultipartFile file) throws DataServiceException {
+	public String putFileInInputStorage(MultipartFile file) throws DataServiceException {
 		try {
             if (file.isEmpty()) {
             	LOG.error("File is empty: " + file.getOriginalFilename());
@@ -227,22 +455,18 @@ public class DataServiceImpl implements DataService {
         }
 	}
 
-	/** Get path for file in input storage folder*/
 	@Override
-	public Path getStorageInputFilePath(String filename) {
+	public Path getFilePathFromInputStorage(String filename) {
 		 return this.inputFolderLocation.resolve(filename);
 	}
 	
-	/** Get path for file in output storage folder*/
 	@Override
-	public Path getStorageOutputFilePath(String filename) {
+	public Path getFilePathFromOutputStorage(String filename) {
 		return this.outputFolderLocation.resolve(filename);
 	}
 
-	/** Get path for all files in input storage folder
-     * @throws DataServiceException*/
 	@Override
-	public Stream<Path> getStorageInputFilePathAll() throws DataServiceException {
+	public Stream<Path> getFilePathAllFromInputStorage() throws DataServiceException {
 		try {
 			return Files
 						.walk(this.inputFolderLocation, 1)
@@ -254,10 +478,8 @@ public class DataServiceImpl implements DataService {
 		}
 	}
 	
-	/** Get path for all files in output storage folder
-     * @throws DataServiceException*/
 	@Override
-	public Stream<Path> getStorageOutputFilePathAll() throws DataServiceException {
+	public Stream<Path> getFilePathAllFromOutputStorage() throws DataServiceException {
 		try {
 			return Files
 						.walk(this.outputFolderLocation, 1)
@@ -269,12 +491,10 @@ public class DataServiceImpl implements DataService {
 		}
 	}
 
-	/** Get file from input storage as resource
-     * @throws DataServiceException*/
 	@Override
-	public Resource getStorageInputFileAsResourse(String filename) throws DataServiceException {
+	public Resource getFileFromInputStorageAsResourse(String filename) throws DataServiceException {
         try {
-            Path file = getStorageInputFilePath(filename);
+            Path file = getFilePathFromInputStorage(filename);
             Resource resource = new UrlResource(file.toUri());
             if(resource.exists() || resource.isReadable()) {
                 return resource;
@@ -289,12 +509,10 @@ public class DataServiceImpl implements DataService {
         }
 	}
 	
-	/** Get file from output storage as resource
-     * @throws DataServiceException*/
 	@Override
-	public Resource getStorageOutputFileAsResourse(String filename) throws DataServiceException {
+	public Resource getFileFromOutputStorageAsResourse(String filename) throws DataServiceException {
 		  try {
-	            Path file = getStorageOutputFilePath(filename);
+	            Path file = getFilePathFromOutputStorage(filename);
 	            Resource resource = new UrlResource(file.toUri());
 	            if(resource.exists() || resource.isReadable()) {
 	                return resource;
@@ -309,9 +527,8 @@ public class DataServiceImpl implements DataService {
 	        }
 	}
 	
-	/** Deletes all files in storage*/
 	@Override
-	public void deleteAllFiles() {
+	public void deleteAllFilesInInputFilesStorage() {
 		FileSystemUtils.deleteRecursively(this.inputFolderLocation.toFile());
 	}
 
@@ -319,8 +536,6 @@ public class DataServiceImpl implements DataService {
 	public List<ResponceForecast> getForecastExcelMode(Integer requestId) throws DataServiceException {
 		List<ResponceForecast> responceList = new ArrayList<>();
 		List<RequestForecastParameterSingle> requestForecastParameterSingleList = dataRepository.getRequestForecastParameterSingleList(requestId);
-		
-		//Sending tasks to execute
 		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
 		List<Future<ResponceForecast>> futureResponsetList = new ArrayList<Future<ResponceForecast>>();
 
@@ -334,7 +549,7 @@ public class DataServiceImpl implements DataService {
 
 		executorService.shutdown();
 		try {
-			executorService.awaitTermination(20000, TimeUnit.SECONDS);
+			executorService.awaitTermination(maxAvaitTermination, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			throw new DataServiceException("R is not answerring too long");
 		} finally{
@@ -367,14 +582,13 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public String getForecastFileExcelMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
-		String filePath = this.getForecastFileMultipleDatabaseMode(responceForecastList);
+	public String createForecastResultFileExcelMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
+		String filePath = this.createForecastResultFileMultipleDatabaseMode(responceForecastList);
 		return filePath;
 	}
 
-	/** Delete file in input storage*/
 	@Override
-	public void deleteFileStorageInput(String filename) {
+	public void deleteFileFromInputStorage(String filename) {
 		Path path = this.inputFolderLocation.resolve(filename);
 		if(path!=null){
 			try {
@@ -385,9 +599,8 @@ public class DataServiceImpl implements DataService {
 		}
 	}
 
-	/** Delete file in output storage*/
 	@Override
-	public void deleteFileStorageOutput(String filename) {
+	public void deleteFileFromOutputStorage(String filename) {
 		Path path = this.outputFolderLocation.resolve(filename);
 		if(path!=null){
 			try {
@@ -398,21 +611,40 @@ public class DataServiceImpl implements DataService {
 		}
 	}
 	
-	/** Get v_request.attachment_path where v_request.response_date_time before moment of time*/
 	@Override
 	public List<String> getAttachmentPathListByResponseTimeBeforeMoment(Date dateBound) {
 		return dataRepository.getAttachmentPathListByResponseTimeBeforeMoment(dateBound);
 	}
 	
-	/** Get v_request.document_path where v_request.response_date_time before moment of time*/
 	@Override
 	public List<String> getDocumentPathListByResponseTimeBeforeMoment(Date dateBound) {
 		return dataRepository.getDocumentPathListByResponseTimeBeforeMoment(dateBound);
 	}
 	
-	/** Delete all request where v_request.response_date_time before moment of time*/
 	@Override
 	public Integer deleteRequestByResponseTimeBeforeMoment(Date dateBound) {
 		return dataRepository.deleteRequestByResponseTimeBeforeMoment(dateBound);
+	}
+
+	@Override
+	public String createElasticityResultFileExcelMode(List<ResponceElasticity> elasticityResponseList) throws DataServiceException {
+		String filePath = this.createElasticityResultFileMultipleDatabaseMode(elasticityResponseList);
+		return filePath;
+	}
+
+	public String createElasticityResultFileMultipleDatabaseMode(List<ResponceElasticity> elasticityResponseList) throws DataServiceException {
+		String result = dataRepository.createElasticityMultipleResultFile(elasticityResponseList);
+		return result;
+	}
+
+	@Override
+	public String createForecastAndElasticityResultFileExcelMode(List<ResponceForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
+		String filePath = this.getForecastWithElasticityFileMultipleDatabaseMode(forecastAndElasticityResponseList);
+		return filePath;
+	}
+
+	private String getForecastWithElasticityFileMultipleDatabaseMode(List<ResponceForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
+		String result = dataRepository.createForecastWithElasticityMultipleResultFile(forecastAndElasticityResponseList);
+		return result;
 	}
 }

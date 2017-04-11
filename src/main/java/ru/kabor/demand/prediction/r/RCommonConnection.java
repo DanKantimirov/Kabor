@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
+/** It extends RConnection */
 public class RCommonConnection extends RConnection {
 	/** Id of connection*/
 	private UUID uuid;
@@ -65,5 +66,4 @@ public class RCommonConnection extends RConnection {
 	public void setCountFailsOfOpeningConnection(Integer countFailsOfOpeningConnection) {
 		this.countFailsOfOpeningConnection = countFailsOfOpeningConnection;
 	}
-
 }

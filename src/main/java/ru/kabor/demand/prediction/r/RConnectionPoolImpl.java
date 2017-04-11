@@ -14,8 +14,7 @@ import org.rosuda.REngine.Rserve.RserveException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
+/** Implementation of RConnectionPool */
 public class RConnectionPoolImpl implements Runnable, RConnectionPool {
 	
 	//Login settings

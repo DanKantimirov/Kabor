@@ -2,27 +2,36 @@ package ru.kabor.demand.prediction.entity;
 
 import java.time.LocalDate;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-
+/** It represents information about sales, rests and price in particular moment of time */
 public class TimeMomentDescription {
-	
-	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+
 	private LocalDate timeMoment;
-	private Double salesQnty;
-	@JsonIgnore
-	private Double restQnty;
+	private TimeSeriesElement sales;	//sales with trand, seasonality and random
+	private TimeSeriesElement rest;		//rests with trand, seasonality and random
+	private Double priceQnty = 0.0;
 
 	public TimeMomentDescription() {
 		super();
 	}
 
-	public TimeMomentDescription(LocalDate timeMoment, Double salesQnty, Double restQnty) {
+	public TimeMomentDescription(LocalDate timeMoment, TimeSeriesElement sales, TimeSeriesElement rest) {
 		super();
 		this.timeMoment = timeMoment;
-		this.salesQnty = salesQnty;
-		this.restQnty = restQnty;
+		this.sales = sales;
+		this.rest = rest;
+	}
+
+	public TimeMomentDescription(LocalDate timeMoment, TimeSeriesElement sales, TimeSeriesElement rest, Double priceQnty) {
+		super();
+		this.timeMoment = timeMoment;
+		this.sales = sales;
+		this.rest = rest;
+		this.priceQnty = priceQnty;
+	}
+	
+	@Override
+	public String toString() {
+		return "TimeMomentDescription [timeMoment=" + timeMoment + ", salesQnty=" + this.sales.getActualValue() + ", restQnty=" + this.rest.getActualValue() + "]";
 	}
 
 	public LocalDate getTimeMoment() {
@@ -33,25 +42,27 @@ public class TimeMomentDescription {
 		this.timeMoment = timeMoment;
 	}
 
-	public Double getSalesQnty() {
-		return salesQnty;
+	public TimeSeriesElement getSales() {
+		return sales;
 	}
 
-	public void setSalesQnty(Double salesQnty) {
-		this.salesQnty = salesQnty;
+	public void setSales(TimeSeriesElement sales) {
+		this.sales = sales;
 	}
 
-	public Double getRestQnty() {
-		return restQnty;
+	public TimeSeriesElement getRest() {
+		return rest;
 	}
 
-	public void setRestQnty(Double restQnty) {
-		this.restQnty = restQnty;
+	public void setRest(TimeSeriesElement rest) {
+		this.rest = rest;
 	}
 
-	@Override
-	public String toString() {
-		return "TimeMomentDescription [timeMoment=" + timeMoment + ", salesQnty=" + salesQnty + ", restQnty=" + restQnty
-				+ "]";
+	public Double getPriceQnty() {
+		return priceQnty;
+	}
+
+	public void setPriceQnty(Double priceQnty) {
+		this.priceQnty = priceQnty;
 	}
 }

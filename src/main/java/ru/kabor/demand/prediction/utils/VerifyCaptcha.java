@@ -12,6 +12,8 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+/** It contains methods for checking Google captcha */
 public class VerifyCaptcha {
 
 	private static final Logger LOG = LoggerFactory.getLogger(VerifyCaptcha.class);
@@ -65,22 +67,21 @@ public class VerifyCaptcha {
 				JSONObject jsonObject = new JSONObject(response.toString());
 				return jsonObject.getBoolean("success");
 			} catch (IOException | JSONException e) {
-				LOG.info(e.toString());
+				LOG.error("Captcha exception", e);
 				return false;
 			} finally {
 				if (outputStream != null) {
 					try {
 						outputStream.close();
 					} catch (IOException e) {
-						LOG.info(e.toString());
+						LOG.error("Captcha exception", e);
 					}
 				}
-
 				if (bufferedReader != null) {
 					try {
 						bufferedReader.close();
 					} catch (IOException e) {
-						LOG.info(e.toString());
+						LOG.error("Captcha exception", e);
 					}
 				}
 			}
@@ -88,5 +89,4 @@ public class VerifyCaptcha {
 			return true;
 		}
 	}
-	
 }

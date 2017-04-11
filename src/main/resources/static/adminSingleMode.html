@@ -53,18 +53,7 @@
 					contentType: 'application/json',
 					mimeType: 'application/json',
 									
-					data: JSON.stringify(
-						/*{
-							requestId:"555",
-							whsId:"2114",
-							artId:"49499",
-							trainingStart:"2016-10-01",
-							trainingEnd:"2016-12-30",
-							forecastDuration:"5",
-							forecastMethod:"WINTER_HOLT",
-							slopeType:"YES"
-						}*/
-						
+					data: JSON.stringify(						
 						{
 							requestId:inputRequestId,
 							whsId:inputWhsId,
@@ -75,8 +64,7 @@
 							forecastMethod:predictMethod,
 							smoothType:useSmooth
 						}
-						
-						),
+					),
 					
 					success: function (data) {
 						$('#start-analyzing-indicator').hide();
@@ -125,6 +113,7 @@
 			  <ul class="nav navbar-nav navbar-left">
 				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="adminSingleMode.html">One-One</a></li>
 				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="adminMultipleMode.html">Many-Many</a></li>
+				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="adminElasticityMode.html">Elasticity</a></li>
 				<li class='my_link_button_2'><a class = 'btn btn-info' id='my_link_button' href="excelMode.html">From Excel</a></li>
 			  </ul>
 			  <ul class="nav navbar-nav navbar-right">

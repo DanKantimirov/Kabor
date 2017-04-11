@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import ru.kabor.demand.prediction.service.DataService;
 
+/** It deletes old requests from database and its input(output) files.*/
 @Component
 public class StorageFolderCleaner {
 
@@ -27,22 +28,22 @@ public class StorageFolderCleaner {
 	@Scheduled(cron="0 0 0 * * ?")
 	public void doSomething() throws ParseException {
 		if(shouldMakeCleaning){
-			LOG.warn("StorageFolderCleaner: started");
+			LOG.info("StorageFolderCleaner: started");
     		Long dayInMs = 1000 * 60 * 60 * 24L;
     		Date date = new Date(System.currentTimeMillis() - (3 * dayInMs));
     		List<String> attachmentPath = dataService.getAttachmentPathListByResponseTimeBeforeMoment(date);
     		for (String fileName : attachmentPath) {
-    			dataService.deleteFileStorageOutput(fileName);
+    			dataService.deleteFileFromOutputStorage(fileName);
     		}
-    		LOG.warn("attachmentPath:" + attachmentPath.toString());
+    		LOG.info("attachmentPath:" + attachmentPath.toString());
     		List<String> documentPath = dataService.getDocumentPathListByResponseTimeBeforeMoment(date);
     		for (String fileName : documentPath) {
-    			dataService.deleteFileStorageInput(fileName);
+    			dataService.deleteFileFromInputStorage(fileName);
     		}
-    		LOG.warn("documentPath:" + documentPath.toString());
+    		LOG.info("documentPath:" + documentPath.toString());
     		Integer deletedRequests = dataService.deleteRequestByResponseTimeBeforeMoment(date);
-    		LOG.warn("deletedRequests:" + deletedRequests);
-    		LOG.warn("StorageFolderCleaner: finished");
+    		LOG.info("deletedRequests:" + deletedRequests);
+    		LOG.info("StorageFolderCleaner: finished");
 		}
 	}
 }

@@ -3,16 +3,15 @@ package ru.kabor.demand.prediction.entity;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/** That class describes result of making forecast for one shop and one product */
 public class ResponceForecast {
 
 	private Integer whsId;
 	private Integer artId;
-	private List<TimeMomentDescription> timeMomentsActual = new ArrayList<>();
-	private List<TimeMomentDescription> timeMomentsPrediction = new ArrayList<>();
-	private List<TimeMomentDescription> timeMomentsSmoothed = new ArrayList<>();
-	private Boolean hasError = false;
-	private String errorMessage = "";
+	private List<TimeMomentDescription> timeMomentsActual = new ArrayList<>();			//input information about time moments with calculated trand, seasonality and random
+	private List<TimeMomentDescription> timeMomentsPrediction = new ArrayList<>();		//predicted time moments
+	private Boolean hasError = false;													//is all right
+	private String errorMessage = "";													//error message if not all right
 
 	public ResponceForecast() {
 		super();
@@ -22,6 +21,24 @@ public class ResponceForecast {
 		super();
 		this.whsId = whsId;
 		this.artId = artId;
+	}
+	
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+
+	public void setErrorMessage(String errorMessage) {
+		this.errorMessage = errorMessage;
+		if(this.errorMessage!=null && !this.errorMessage.trim().equals("")){
+			this.hasError = true;
+		} else{
+			this.hasError = false;
+		}
+	}
+	
+	@Override
+	public String toString() {
+		return "ResponceForecast [whsId=" + whsId + ", artId=" + artId + ", hasError=" + hasError + ", errorMessage=" + errorMessage + "]";
 	}
 
 	public Integer getWhsId() {
@@ -56,16 +73,6 @@ public class ResponceForecast {
 		this.timeMomentsPrediction = timeMomentsPrediction;
 	}
 
-	public List<TimeMomentDescription> getTimeMomentsSmoothed() {
-		return timeMomentsSmoothed;
-	}
-
-	public void setTimeMomentsSmoothed(List<TimeMomentDescription> timeMomentsSmoothed) {
-		this.timeMomentsSmoothed = timeMomentsSmoothed;
-	}
-	
-	
-
 	public Boolean getHasError() {
 		return hasError;
 	}
@@ -73,23 +80,4 @@ public class ResponceForecast {
 	public void setHasError(Boolean hasError) {
 		this.hasError = hasError;
 	}
-
-	public String getErrorMessage() {
-		return errorMessage;
-	}
-
-	public void setErrorMessage(String errorMessage) {
-		this.errorMessage = errorMessage;
-		if(this.errorMessage!=null && !this.errorMessage.trim().equals("")){
-			this.hasError = true;
-		} else{
-			this.hasError = false;
-		}
-	}
-
-	@Override
-	public String toString() {
-		return "ResponceForecast [whsId=" + whsId + ", artId=" + artId + ", hasError=" + hasError + ", errorMessage=" + errorMessage + "]";
-	}
-	
 }

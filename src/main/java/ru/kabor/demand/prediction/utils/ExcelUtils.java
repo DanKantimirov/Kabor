@@ -1,13 +1,24 @@
 package ru.kabor.demand.prediction.utils;
 
-import org.apache.poi.hssf.usermodel.HSSFClientAnchor;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.ss.usermodel.*;
-import org.imgscalr.Scalr;
-import org.imgscalr.Scalr.Method;
-import org.imgscalr.Scalr.Mode;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellValue;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,38 +28,35 @@ import com.monitorjbl.xlsx.StreamingReader;
 import ru.kabor.demand.prediction.service.RequestServiceImpl;
 import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-
+/** It contains methods for working with MS Excel */
 public class ExcelUtils {
 
 	private static final Logger LOG = LoggerFactory.getLogger(RequestServiceImpl.class);
 
 	/** List for validating csv headers*/
 	public static List<String> validHeaders = new ArrayList<>();
+	public static List<String> validHeadersPrices = new ArrayList<>();
 
 	static {
 		validHeaders.add(0, "whs_id");
 		validHeaders.add(1, "art_id");
 		validHeaders.add(2, "day_id");
-		validHeaders.add(3, "sale_qnty");	//TODO: presence of rest_qnty is not mandatory
+		validHeaders.add(3, "sale_qnty");
+		
+		validHeadersPrices.add(0, "whs_id");
+		validHeadersPrices.add(1, "art_id");
+		validHeadersPrices.add(2, "day_id");
+		validHeadersPrices.add(3, "sale_qnty");
+		validHeadersPrices.add(4, "price");
 	}
 
 	/** Validation xls file headers
 	 *
 	 * @param file
+	 * @param request_TYPE 
 	 * @throws Exception
      */
-	public static void validateXLSHeaders(MultipartFile file) throws InvalidHeaderException {
-		LOG.debug("prepare validation");
+	public static void validateXLSHeaders(MultipartFile file, String requestType) throws InvalidHeaderException {
 		Workbook workbook = null;
 		try {
 			workbook = WorkbookFactory.create(file.getInputStream());
@@ -59,14 +67,27 @@ public class ExcelUtils {
 				throw new InvalidHeaderException("Excel file is empty");
 			}
 
-			for (int i = 0; i < validHeaders.size(); i++) {
-				requestHeaders.add(readValueFromXls(workbook, headerRow, i));
-			}
+			if(requestType.equals(ConstantUtils.REQUEST_TYPE_FORECAST)){
+				for (int i = 0; i < validHeaders.size(); i++) {
+					requestHeaders.add(readValueFromXls(workbook, headerRow, i));
+				}
+				
+    			if (!validHeaders.equals(requestHeaders)) {
+    				LOG.error("Invalid header in Excel File:" + requestHeaders);
+    				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+    			}
+			} else {
+				for (int i = 0; i < validHeadersPrices.size(); i++) {
+					requestHeaders.add(readValueFromXls(workbook, headerRow, i));
+				}
 
-			if (!validHeaders.equals(requestHeaders)) {
-				LOG.error("Invalid header in Excel File:" + requestHeaders);
-				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+				
+    			if (!validHeadersPrices.equals(requestHeaders)) {
+    				LOG.error("Invalid header in Excel File:" + requestHeaders);
+    				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+    			}
 			}
+			
 		} catch (InvalidFormatException | IOException e) {
 			throw new InvalidHeaderException("Invalid header in Excel File:" + e.toString());
 		} finally {
@@ -83,17 +104,17 @@ public class ExcelUtils {
 	/** Validation xlsx file headers
 	 *
 	 * @param file
+	 * @param request_TYPE 
 	 * @throws Exception
     */
-	public static void validateXLSXHeaders(MultipartFile file) throws InvalidHeaderException {
-		LOG.debug("prepare validation");
+	public static void validateXLSXHeaders(MultipartFile file, String requestType) throws InvalidHeaderException {
 		StreamingReader reader = null;
 		try {
 			reader = StreamingReader.builder()
-			        .rowCacheSize(100)    // number of rows to keep in memory (defaults to 10)
-			        .bufferSize(4096)     // buffer size to use when reading InputStream to file (defaults to 1024)
+			        .rowCacheSize(100)
+			        .bufferSize(4096)
 			        .sheetIndex(0) 
-			        .read(file.getInputStream());            // InputStream or File for XLSX file (required)
+			        .read(file.getInputStream());
 			
 			List<String> requestHeaders = new ArrayList<>();
 			Iterator<Row> rowIterator = reader.iterator();
@@ -106,12 +127,21 @@ public class ExcelUtils {
 			for (Cell cellInRow : row) {
 				String cellValue = readCellWithoutFormulas(cellInRow,null);
 			    requestHeaders.add(cellValue);
-			  }
-
-			if (!validHeaders.equals(requestHeaders)) {
-				LOG.error("Invalid header in Excel File:" + requestHeaders);
-				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
 			}
+			
+			if(requestType.equals(ConstantUtils.REQUEST_TYPE_FORECAST)){
+				requestHeaders.remove("price");
+    			if (!validHeaders.equals(requestHeaders)) {
+    				LOG.error("Invalid header in Excel File:" + requestHeaders);
+    				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+    			}
+			} else {
+    			if (!validHeadersPrices.equals(requestHeaders)) {
+    				LOG.error("Invalid header in Excel File:" + requestHeaders);
+    				throw new InvalidHeaderException("Invalid header in Excel File:" + requestHeaders);
+    			}
+			}
+			
 		} catch (IOException e) {
 			throw new InvalidHeaderException("Invalid header in Excel File:" + e.toString());
 		} finally {
@@ -203,6 +233,7 @@ public class ExcelUtils {
 		return cellValue;
 	}
 	
+	@SuppressWarnings("deprecation")
 	public static String readCellWithoutFormulas(Cell cell, SimpleDateFormat dateFormat){
 		if (cell == null) {
 			return "";
@@ -242,19 +273,20 @@ public class ExcelUtils {
 			fileOutputStream = new FileOutputStream(filePath);
 			workbook.write(fileOutputStream);
 		} catch (FileNotFoundException e) {
+			LOG.error("Can't update Excel file. It' possible that file is already open", e);
 			throw new IOException("Can't update Excel file. It' possible that file is already open:" + filePath);
 		} finally {
 			if (fileOutputStream != null) {
 				try {
 					fileOutputStream.close();
 				} catch (IOException e) {
-					new IOException("Can't save Excel file:" + e.toString());
+					LOG.error("Can't save Excel file.", e);
 				}
 			}
 			try {
 				workbook.close();
 			} catch (IOException e) {
-				new IOException("Can't close Excel file:" + e.toString());
+				LOG.error("Can't close Excel file", e);
 			}
 		}
 	}
@@ -271,60 +303,4 @@ public class ExcelUtils {
 		return result;
 	}
 	
-	/** Place jpeg image into cell 
-	 * @throws IOException */
-	
-	public static void insetJpegImageToCell(String imagePath, Integer rowNumber, Integer columnNumber, Workbook workbook, Sheet sheet) throws IOException  {
-		URL url = null;
-		if (imagePath == null || imagePath.trim().equals("")) {
-			return;
-		}
-		try {
-			imagePath = imagePath.replace('\\', '/');
-			url = new URL("file:" + imagePath); //	url = new URL("file:/E:/project-logo3.jpg");
-			
-			// enlarge image cell
-	        sheet.setColumnWidth(columnNumber, 5000);
-	        sheet.getRow(rowNumber).setHeightInPoints(100);
-	 
-	        // read image into memory
-	        ByteArrayOutputStream img_bytes = new ByteArrayOutputStream();
-	        img_bytes = resizeImage(url,250,250);
-	        if(img_bytes!=null && img_bytes.size()>0){
-    	        ClientAnchor anchor = new HSSFClientAnchor(0, 0, 0, 0, (short)(columnNumber+0), rowNumber,
-                        (short) (columnNumber+1), rowNumber+1);
-                int index = workbook.addPicture(img_bytes.toByteArray(), HSSFWorkbook.PICTURE_TYPE_JPEG);
-                Drawing patriarch = sheet.createDrawingPatriarch();
-                patriarch.createPicture(anchor, index);
-                anchor.setAnchorType(org.apache.poi.ss.usermodel. ClientAnchor.AnchorType.MOVE_DONT_RESIZE );
-	        }
-		} catch (IOException e) {
-			throw new IOException("Can't insert image to cell");
-		} 
-	}
-	
-	/** Resize image */
-	public static ByteArrayOutputStream resizeImage(URL url, Integer hight, Integer width) throws IOException {
-		if (url == null) {
-			return null;
-		}
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		try {
-			BufferedImage originalImage = ImageIO.read(url);
-
-			originalImage = Scalr.resize(originalImage, 
-										Method.SPEED, 
-										Mode.FIT_TO_WIDTH, 
-										hight, width, Scalr.OP_ANTIALIAS);
-			ImageIO.write(originalImage, "png", byteArrayOutputStream);
-			byteArrayOutputStream.flush();
-			return byteArrayOutputStream;
-		} catch (IOException e) {
-			throw new IOException("Can't read image from url:" + url.toString());
-		} finally{
-			if(byteArrayOutputStream!=null){
-				byteArrayOutputStream.close();
-			}
-		}
-	}
 }

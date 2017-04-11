@@ -10,6 +10,7 @@
 	install.packages("forecast")
 	install.packages("GMDH")
 	install.packages("dplyr")
+	install.packages("stlplus")
 
 4.) After installing all packages start Rserve. 
 
@@ -39,12 +40,13 @@
 	
 8.) The Main page is located in 
 
-	http://localhost:8090/demand/index.html
+	http://localhost:8080/index.html
 	
 9.) Admin mode pages are located in
 
-	http://localhost:8090/demand/adminSingleMode.html
-	http://localhost:8090/demand/adminMultipleMode.html
+	http://localhost:8080/adminSingleMode.html
+	http://localhost:8080/adminMultipleMode.html
+	http://localhost:8080/adminElasticityMode.html
 
 	Login: analyst
 	Password: secret

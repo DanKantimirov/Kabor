@@ -1,5 +1,6 @@
 package ru.kabor.demand.prediction.r;
 
+/** Exception in connection pool to R*/
 public class RConnectionPoolException extends Exception {
 
 	private static final long serialVersionUID = 2494494909137945514L;

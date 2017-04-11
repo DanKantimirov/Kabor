@@ -8,9 +8,7 @@ import ru.kabor.demand.prediction.utils.exceptions.InvalidHeaderException;
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * interface for managing request db entities
- */
+/** It contains methods for working with requests to server */
 public interface RequestService {
 
     /**
@@ -33,15 +31,28 @@ public interface RequestService {
 
     /**
      * It reads request from db and parses its data to v_sales_rest
-     * @return id of proceed request, null if nothing changed
+     * @return imported request, null if nothing changed
      * @throws IOException
      * @throws InvalidFormatException
      */
-    Integer importRawRequest() throws IOException, InvalidFormatException;
+    Request importRawRequest() throws IOException, InvalidFormatException;
     
     /**
      * It makes prediction by data presented in tables v_forecast_parameter and v_sales_rest
      * @return path to xls file with result
      * */
     String makeRequestPrediction(Integer requestId) throws DataServiceException;
+    
+    /**
+     * It calculates elasticity by data presented in table v_sales_rest with prices
+     * @return path to xls file with result
+     * */
+    String makeRequestElasticity(Integer requestId) throws DataServiceException;
+
+    /**
+     * It makes prediction and calculates elasticity by data presented in tables v_forecast_parameter and v_sales_rest
+     * @return path to xls file with result
+     * @throws DataServiceException 
+     * */
+	String makeRequestAndElasticityPrediction(Integer requestId) throws DataServiceException;
 }

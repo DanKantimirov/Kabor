@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<meta name="description" content="Forecasting of demand"/>
+		<meta name="author" content="Kantimirov D. Boroda A."/>
+		
+		<title>Start forecasting</title>
+		<script src="js/jquery-3.1.1.js"></script>
+		<script src="js/jquery.localScroll.min.js"></script>
+		<script src="js/jquery.scrollTo.min.js"></script>
+		<script src="js/jquery.validate.js"></script>
+		<script src="js/additional-methods.js"></script>
+		<script src="js/bootstrap.js"></script>
+		<script src="js/bootstrap-datepicker.js"></script>
+		<script src="locales/bootstrap-datepicker.en-GB.min.js"></script>
+		<link href="css/bootstrap.css" rel="stylesheet" />
+		<link href="css/bootstrap-theme.css" rel="stylesheet" />
+		<link href="css/demand-forecasting.css" rel="stylesheet" />
+		
+		<link rel="shortcut icon" href="images/Logo.png" type="image/x-icon"/>
+		<link rel="icon" href="images/Logo.png" type="image/x-icon"/>
+		
+		<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+		<!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+		
+		<script type="text/javascript">
+			jQuery().ready(function() {
+
+				$(".frm").hide("fast");
+				$("#formStep1").show("slow");
+				
+				//1->2
+				$(".open1").click(function() {
+					$("#sendExcelForm").validate()
+					if($("#sendExcelForm").valid()){
+						$(".frm").hide("fast");
+						$("#formStep2").show("slow");
+					}
+				});
+
+				//2->3
+				$(".open2").click(function() {
+					$("#sendExcelForm").validate()
+					if($("#sendExcelForm").valid()){
+						$(".frm").hide("fast");
+						$("#formStep3").show("slow");
+					}
+				});
+
+				//2->1
+				$(".back2").click(function() {
+					$(".frm").hide("fast");
+					$("#formStep1").show("slow");
+				});
+
+				//3->2
+				$(".back3").click(function() {
+					$(".frm").hide("fast");
+					$("#formStep2").show("slow");
+				});
+				
+				//Default settings
+				$("#defaultSettingsInput").click(function() {
+					if( $("#defaultSettingsInput option:selected").text()=="Yes" ){
+						$("#predictionDaysInput").prop("disabled",true);
+						$("#predictionMethod").prop("disabled",true);
+						$("#useSmoothInput").prop("disabled",true);
+					} else{
+						$("#predictionDaysInput").prop("disabled",false);
+						$("#predictionMethod").prop("disabled",false);
+						$("#useSmoothInput").prop("disabled",false);
+					}
+				});
+				
+				<!-- Script to Activate the Carousel -->
+			    $('.carousel').carousel({
+					interval: 15000 //changes the speed
+				});
+				
+				$('#nav').localScroll({duration:800});
+			});
+			
+			
+		</script>
+		
+	</head>
+	
+	<body>	
+	
+		 <!-- Navigation -->
+		<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="index.html"><img style="max-width:30px; margin-top: -7px;" src="images/Logo.png" alt="Forecasting of demand"/></a>
+				</div>
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+					<ul class="nav navbar-nav">
+						<li>
+							<a href="index.html#howToCreateXlsFile">How to do</a>
+						</li>
+						<li>
+							<a href="excelMode.html">Start forecasting</a>
+						</li>
+						<li>
+							<a href="excelModeElastic.html">Calculate elasticity</a>
+						</li>
+						<li>
+							<a href="aboutProject.html">About project</a>
+						</li>
+						<li>
+							<a href="contactUs.html">Contact us</a>
+						</li>
+					</ul>
+				</div>
+				<!-- /.navbar-collapse -->
+			</div>
+			<!-- /.container -->
+		</nav>
+		
+		<header id="myCarousel" class="carousel slide">
+			<!-- Indicators -->
+			<ol class="carousel-indicators">
+				<li data-target="#myCarousel" data-slide-to="0" class="active"></li>
+				<li data-target="#myCarousel" data-slide-to="1"></li>
+				<li data-target="#myCarousel" data-slide-to="2"></li>
+			</ol>
+			
+			<!-- Wrapper for Slides -->
+			<div class="carousel-inner">
+				<div class="item active">
+					<!-- Set the first background image using inline CSS below. -->
+					<div class="fill"><a href="https://affiliates.host1plus.com/ref/dankantimirov/3fd7654a.html" target="_top"><img class = "img-responsive center-block" src="https://affiliates.host1plus.com/h1p/bulk_upload/banners/420f94c81485954839_728x90_VPS-quality.png" alt="" title=""/></a><img style="border:0" src="https://affiliates.host1plus.com/scripts/imp.php?a_aid=dankantimirov&amp;a_bid=3fd7654a" width="1" height="1" alt="" /></div>
+				</div>
+				<div class="item">
+					<!-- Set the second background image using inline CSS below. -->
+					<div class="fill"><a href="https://affiliates.host1plus.com/ref/dankantimirov/3f8155ef.html" target="_top"><img class = "img-responsive center-block" src="https://affiliates.host1plus.com/h1p/bulk_upload/banners/420f94c81485954542_728x90_Cloud-qualityL.png" alt="" title=""/></a><img style="border:0" src="https://affiliates.host1plus.com/scripts/imp.php?a_aid=dankantimirov&amp;a_bid=3f8155ef" width="1" height="1" alt="" /></div>
+				</div>
+				<div class="item">
+					<!-- Set the third background image using inline CSS below. -->
+					<div class="fill"><a href="https://affiliates.host1plus.com/ref/dankantimirov/37e0075b.html" target="_top"><img class = "img-responsive center-block" src="https://affiliates.host1plus.com/h1p/bulk_upload/banners/420f94c81480594056_728x90_cloud50.png" alt="" title=""/></a><img style="border:0" src="https://affiliates.host1plus.com/scripts/imp.php?a_aid=dankantimirov&amp;a_bid=37e0075b" width="1" height="1" alt="" /></div>
+				</div>
+			</div>
+
+			<!-- Controls -->
+			<a class="left carousel-control" href="#myCarousel" data-slide="prev">
+				<span class="icon-prev"></span>
+			</a>
+			<a class="right carousel-control" href="#myCarousel" data-slide="next">
+				<span class="icon-next"></span>
+			</a>
+
+		</header>
+
+			<div class="container-fluid">
+			
+				<div class="row">
+					<div class="col-lg-12">
+						<!-- Message from server -->
+						<div th:if="${message}">
+							<!--<h2 th:text="${message}"/>-->
+							<div th:switch="${color}">
+							  <h2 th:case="'green'"		th:style="'color:green;'"	th:text="${message}" />
+							  <h2 th:case="'orange'"	th:style="'color:orange;'"	th:text="${message}"/>
+							  <h2 th:case="'red'" 		th:style="'color:red;'"		th:text="${message}"/>
+							  <h2 th:case="*"			th:style="'color:black;'"	th:text="${message}"/>
+							</div>
+						</div>
+					</div>
+				</div>
+				
+				<div class="row">
+					<div class="col-lg-12">
+						<form name="sendExcelForm" id="sendExcelForm" class="form-horizontal" method="POST" enctype="multipart/form-data" action="/excelMode">
+
+							<div id="formStep1" class="frm">
+								<legend>1.) Enter your Excel file</legend>
+								<fieldset>
+									<!-- fileInput --> 
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="fileInput">File to upload:</label>
+									  <div class="col-md-4">
+										<input id="fileInput" name="fileInput" class="input-file btn-info required" type="file" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"></input>
+										<span class="help-block">Excel file with sales statistic</span>
+									  </div>
+									</div>
+									
+									<!-- elasticityTypeInput -->
+									
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="elasticityTypeInput">Use elasticty(requires prices in excel)</label>
+									  <div class="col-md-4">
+										<select id="elasticityTypeInput" name="elasticityTypeInput" class="form-control">
+										  <option value="FORECAST" selected="selected">NO</option>
+										  <option value="FORECASTANDELASTICITY">YES</option>
+										</select>
+										<span class="help-block">Should calculate elasticity</span>  
+									  </div>
+									</div>
+									
+									<!-- 1->2 -->
+									<div class="form-group">
+									  <div class="col-lg-12 col-lg-offset-4 col-md-offset-4">
+										<button class="btn btn-primary open1" type="button">Next  <i class="glyphicon glyphicon-forward"></i></button> 
+									  </div>
+									</div>
+								</fieldset>
+							</div>
+							 
+							<div id="formStep2" class="frm">
+								<legend>2.) Enter forecast parameters</legend>
+								<fieldset>
+									<!-- default Settings -->
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="defaultSettingsInput">Use default settings</label>
+									  <div class="col-md-4">
+										<select id="defaultSettingsInput" name="defaultSettingsInput" class="form-control">
+										  <option value="0" selected="selected">No</option>
+										  <option value="1">Yes</option>
+										</select>
+										<span class="help-block">Default: 7 days, ARIMA, none smoothing</span>  
+									  </div>
+									</div>
+									<!-- predictionDaysInput -->
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="predictionDaysInput">Duration of forecasting</label>
+									  <div class="col-md-4">
+										<select id="predictionDaysInput" name="predictionDaysInput" class="form-control">
+										  <option value="1">1</option>
+										  <option value="2">2</option>
+										  <option value="3">3</option>
+										  <option value="4">4</option>
+										  <option value="5">5</option>
+										  <option value="6">6</option>
+										  <option value="7" selected="selected">7</option>
+										</select>
+										<span class="help-block">Count days in forecast</span>  
+									  </div>
+									</div>
+									<!-- predictionMethod -->
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="predictionMethod">Method of demand forecasting</label>
+									  <div class="col-md-4">
+										<select id="predictionMethod" name="predictionMethod" class="form-control">
+											<option value="AUTO_CHOOSE">AUTO CHOOSE (BEST FIT)</option>
+											<option value="ARIMA_AUTO" selected="selected">ARIMA</option>
+											<option value="ETS">EXPONENTIAL SMOOTHING (ETS)</option>
+											<option value="TBATS">TBATS</option>
+											<option value="HOLT_WINTERS">HOLT-WINTERS</option>
+											<option value="NEURAL_NETWORK">NEURAL_NETWORK</option>
+										</select>
+										<span class="help-block">Method of demand forecasting</span> 
+									  </div>
+									</div>
+									<!-- useSmoothInput -->
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="useSmoothInput">Smoothing</label>
+									  <div class="col-md-4">
+										<select id="useSmoothInput" name="useSmoothInput" class="form-control">
+										  <option value="NO" selected="selected">None</option>
+										  <option value="YES">30% of deviation</option>
+										</select>
+										<span class="help-block">Method of deleting extremums</span>  
+									  </div>
+									</div>
+									<div class="clearfix" style="height: 10px;clear: both;"></div>
+									<!-- 2->3 and 2->1 -->
+									<div class="form-group">
+									  <div class="col-lg-12 col-lg-offset-4 col-md-offset-4">
+										<button class="btn btn-warning back2" type="button">Back  <i class="glyphicon glyphicon-backward"></i></button> 
+										<button class="btn btn-primary open2" type="button">Next  <i class="glyphicon glyphicon-forward"></i></button> 
+									  </div>
+									</div>
+								</fieldset>
+							</div>
+							<div id="formStep3" class="frm">
+								<legend>3.) Enter email for sending result of forecasting</legend>
+								<fieldset>
+								
+									<!-- inputEmail -->
+									<div class="form-group">
+									  <label class="col-md-4 control-label" for="inputEmail">Email: </label>  
+									  <div class="col-md-4">
+									  <input id="inputEmail" name="inputEmail" placeholder="somemail@yahoo.com" class="form-control input-md required" type="text"></input>
+									  <span class="help-block">Email for sending result of forecasting</span>  
+									  </div>
+									</div>
+
+									<!-- captcha -->
+									<div class="form-group">
+										<label class="col-md-4 control-label" for="singlebutton">Captcha</label>
+										<div class="col-md-4">
+											<script src="https://www.google.com/recaptcha/api.js" async="true" defer="true"></script>
+											<div class="g-recaptcha" data-sitekey="6LeSkhkUAAAAAG3oWCDd38ZlNIm_rnxCLQr1-y00"></div>
+										</div>
+									</div>
+									<!-- for preventing xss -->
+									<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"></input>
+									<!-- 3->2 -->
+									<div class="form-group">
+										<div class="col-lg-12 col-lg-offset-4 col-md-offset-4">
+											<button class="btn btn-warning back3" type="button">Back  <i class="glyphicon glyphicon-backward"></i></button> 
+											<button type="submit"  class="btn btn-primary">Upload  <i class="glyphicon glyphicon-forward"></i></button>
+										</div>
+									</div>
+								</fieldset>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+			
+		<!-- Footer -->
+		<footer>
+			<div class="container">
+				<div class="row">
+					<div class="col-lg-12">
+						<p>Copyright &copy; Project Demand Forecaster 2017</p>
+					</div>
+				</div>
+				<!-- /.row -->
+			</div>
+			<!-- /.container -->
+		</footer>
+	</body>
+</html>

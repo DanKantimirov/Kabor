@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
+/** Settings for user access to pages and services */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -24,8 +25,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.antMatchers("/css/**", "/fonts/**","/images/**","/js/**","/locales/**").permitAll()			
 				.antMatchers("/adminSingleMode.html").hasRole("ADMINISTRATOR")
 				.antMatchers("/adminMultipleMode.html").hasRole("ADMINISTRATOR")
+				.antMatchers("/adminElasticityMode.html").hasRole("ADMINISTRATOR")
 				.antMatchers("/forecastsingle").hasRole("ADMINISTRATOR")
 				.antMatchers("/forecastmultiple").hasRole("ADMINISTRATOR")
+				.antMatchers("/elasticitymultiple").hasRole("ADMINISTRATOR")
 				.antMatchers("/report/*").hasRole("ADMINISTRATOR")
 				.antMatchers("/login.html","/logout").permitAll()
 				.and()
@@ -42,10 +45,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 			.inMemoryAuthentication()
 				  .withUser(adminLogin).password(adminPassword).roles("ADMINISTRATOR");
 	}
-	
-	/*private CsrfTokenRepository csrfTokenRepository() { 
-	    HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository(); 
-	    repository.setSessionAttributeName("_csrf");
-	    return repository; 
-	}*/
 }

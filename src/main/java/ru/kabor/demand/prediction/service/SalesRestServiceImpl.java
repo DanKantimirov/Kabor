@@ -6,10 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.kabor.demand.prediction.entity.SalesRest;
 import ru.kabor.demand.prediction.repository.SalesRestRepository;
-
 import java.util.List;
 
-
+/** Implementation of SalesRestService */
 @Service
 public class SalesRestServiceImpl implements SalesRestService {
 
@@ -22,6 +21,6 @@ public class SalesRestServiceImpl implements SalesRestService {
     public void storeBathSalesRest(List<SalesRest> salesRestList) {
         salesRestRepository.save(salesRestList);
         salesRestRepository.flush();
-        LOG.debug("save and flush salesRest batch list");
+        LOG.info("save and flush salesRest batch list");
     }
 }

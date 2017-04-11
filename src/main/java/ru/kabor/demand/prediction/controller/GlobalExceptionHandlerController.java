@@ -9,17 +9,18 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
+/** Handler for all exceptions in controllers */
 @ControllerAdvice  
 @RestController 
 public class GlobalExceptionHandlerController {
 	private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandlerController.class);
 	
 	@ExceptionHandler(Exception.class)
-	public ModelAndView handleError(HttpServletRequest req, Exception ex) {
-		LOG.error("Request: " + req.getRequestURL() + " raised " + ex);
+	public ModelAndView handleError(HttpServletRequest req, Exception exception) {
+		LOG.error("Request: " + req.getRequestURL(), exception);
 		ModelAndView mav = new ModelAndView("error");
-		mav.addObject("exception", ex);
+		mav.addObject("exception", exception);
 		mav.addObject("url", req.getRequestURL());
 		return mav;
-	} 
+	}
 }

@@ -3,6 +3,7 @@ package ru.kabor.demand.prediction.entity;
 import javax.persistence.*;
 import java.time.LocalDate;
 
+/** It represents information about sales, rests and price in particular moment of time (from database) */
 @Entity
 @Table(name = "v_sales_rest")
 public class SalesRest {
@@ -25,6 +26,9 @@ public class SalesRest {
 
 	@Column(name = "rest_qnty")
 	private double restQnty;
+	
+	@Column(name = "price")
+	private double price;
 
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "request_id", nullable = false)
@@ -66,7 +70,13 @@ public class SalesRest {
 		this.restQnty = restQnty;
 		this.request = request;
 	}
-
+	
+	@Override
+	public String toString() {
+		return "SalesRest [id=" + id + ", whsId=" + whsId + ", artId=" + artId + ", dayId=" + dayId + ", saleQnty=" + saleQnty + ", restQnty=" + restQnty + ", price=" + price
+				+ ", request=" + request + "]";
+	}
+	
 	public int getId() {
 		return id;
 	}
@@ -123,4 +133,11 @@ public class SalesRest {
 		this.request = request;
 	}
 
+	public double getPrice() {
+		return price;
+	}
+
+	public void setPrice(double price) {
+		this.price = price;
+	}
 }

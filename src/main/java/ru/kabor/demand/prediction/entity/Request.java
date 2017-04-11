@@ -16,7 +16,7 @@ import javax.persistence.Table;
 
 import org.hibernate.validator.constraints.Email;
 
-
+/** It represents common information about request (from database)*/
 @Entity
 @Table(name = "v_request")
 public class Request {
@@ -29,6 +29,9 @@ public class Request {
     @Column(length = 45, nullable = false)
     @Email
     private String email;
+    
+    @Column(name = "request_type", length = 25, nullable = false )
+    private String requestType;
 
     @Column(name = "send_date_time", nullable = false)
     private LocalDateTime sendDateTime;
@@ -162,6 +165,12 @@ public class Request {
 	public void setForecastParameter(ForecastParameter forecastParameter) {
 		this.forecastParameter = forecastParameter;
 	}
-    
-    
+
+	public String getRequestType() {
+		return requestType;
+	}
+
+	public void setRequestType(String requestType) {
+		this.requestType = requestType;
+	}
 }

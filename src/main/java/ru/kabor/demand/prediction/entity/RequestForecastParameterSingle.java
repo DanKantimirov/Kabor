@@ -11,6 +11,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 
+/** That class describes JSON request from admin mode for making forecast for one shop and one product */
 @XmlRootElement
 @XmlAccessorType(javax.xml.bind.annotation.XmlAccessType.FIELD)
 public class RequestForecastParameterSingle implements Serializable {

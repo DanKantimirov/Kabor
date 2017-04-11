@@ -6,6 +6,7 @@ import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 
 import javax.persistence.*;
 
+/** It represents parameters for making forecast (from database) */
 @Entity
 @Table(name = "v_forecast_parameter")
 public class ForecastParameter {
@@ -106,6 +107,4 @@ public class ForecastParameter {
 	public void setSmoothing_method(SMOOTH_TYPE smoothing_method) {
 		this.smoothing_method = smoothing_method;
 	}
-    
-    
 }

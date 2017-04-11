@@ -29,7 +29,7 @@ import org.springframework.stereotype.Component;
 
 import ru.kabor.demand.prediction.repository.DataRepository;
 
-/** Class for sending Email messages to client*/
+/** It send email message to client */
 @Component
 @Scope("singleton")
 public class EmailSender {
@@ -76,8 +76,8 @@ public class EmailSender {
 		try{
 			Future<Session> futureSession = executorService.submit(gettingSessionTask);
 			this.session = futureSession.get(30, TimeUnit.SECONDS);
-		} catch(TimeoutException|ExecutionException|InterruptedException exception){
-			LOG.error("Can't initializa session to post server." + exception.toString());
+		} catch(TimeoutException|ExecutionException|InterruptedException e){
+			LOG.error("Can't initializa session to post server.", e);
 			throw new EmailSenderException("Can't initializa session to post server");
 		} finally{
 			executorService.shutdownNow();
@@ -129,9 +129,9 @@ public class EmailSender {
 			message.setContent(fromString + comments, "text/html");
 			Transport.send(message);
 		} catch (AddressException e) {
-			e.printStackTrace();
+			LOG.error("Can't send email.", e);
 		} catch (MessagingException e) {
-			e.printStackTrace();
+			LOG.error("Can't send email.", e);
 		}
 	}
 
@@ -164,9 +164,9 @@ public class EmailSender {
 	/** Send message with link to forecast demand
 	 * @param requestId v_request.requestId
 	 * @throws EmailSenderException */
-	public void sendMessageWithResult(Long requestId)
+	public void sendMessageWithForecastResult(Long requestId)
 			throws AddressException, MessagingException, EmailSenderException {
-		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithResultText(requestId);
+		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithForecastResultText(requestId);
 		String userEmail = emailMessageParameters.getEmail();
 		String messageBody = emailMessageParameters.getMessageBody();
 		String attachmentPath = emailMessageParameters.getAttachmentLink();
@@ -191,10 +191,73 @@ public class EmailSender {
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
 	};
+	
+	/** Send message with link to elasticity calculation
+	 * @param requestId v_request.requestId
+	 * @throws EmailSenderException */
+	public void sendMessageWithElasticityResult(Long requestId)
+			throws AddressException, MessagingException, EmailSenderException {
+		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithElasticityResultText(requestId);
+		String userEmail = emailMessageParameters.getEmail();
+		String messageBody = emailMessageParameters.getMessageBody();
+		String attachmentPath = emailMessageParameters.getAttachmentLink();
+
+		if (userEmail == null || userEmail.trim().equals("")) {
+			throw new EmailSenderException("Empty email address. RequestId:" + requestId);
+		}
+
+		if (messageBody == null || messageBody.trim().equals("")) {
+			throw new EmailSenderException("Empty message body. RequestId:" + requestId);
+		}
+
+		if (attachmentPath == null || attachmentPath.trim().equals("")) {
+			throw new EmailSenderException("Empty attachmentPath. RequestId:" + requestId);
+		}
+
+		Message message = new MimeMessage(session);
+		message.setFrom(new InternetAddress(this.fullLogin));
+		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
+		message.setSubject("Request " + requestId.toString() + " has been successfully fulfilled");
+		message.setSentDate(new Date());
+		message.setContent(messageBody, "text/html");
+		Transport.send(message);
+	};
+	
+	/** Send message with link to elasticity calculation in database mode
+	 * @param requestId v_request.requestId
+	 * @throws EmailSenderException */
+	public void sendMessageWithElasticityResult (Long requestId, String userEmail, String filePath) throws AddressException, MessagingException, EmailSenderException{
+	
+		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithElasticityResultText(requestId, userEmail, filePath);
+		String messageBody = emailMessageParameters.getMessageBody();
+		String attachmentPath = emailMessageParameters.getAttachmentLink();
+
+		if (userEmail == null || userEmail.trim().equals("")) {
+			throw new EmailSenderException("Empty email address. RequestId:" + requestId);
+		}
+
+		if (messageBody == null || messageBody.trim().equals("")) {
+			throw new EmailSenderException("Empty message body. RequestId:" + requestId);
+		}
+
+		if (attachmentPath == null || attachmentPath.trim().equals("")) {
+			throw new EmailSenderException("Empty attachmentPath. RequestId:" + requestId);
+		}
+
+		Message message = new MimeMessage(session);
+		message.setFrom(new InternetAddress(this.fullLogin));
+		message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(userEmail));
+		message.setSubject("Request " + requestId.toString() + " has been successfully fulfilled");
+		message.setSentDate(new Date());
+		message.setContent(messageBody, "text/html");
+		Transport.send(message);
+		
+	};
+	
 
 	/** Send message with error message. Error message will be taken from v_request.response_text 
 	 *  @param requestId v_request.requestId
-	 * @throws EmailSenderException */
+	 *  @throws EmailSenderException */
 	public void sendMessageWithError(Long requestId) throws AddressException, MessagingException, EmailSenderException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithErrorText(requestId);
 		String userEmail = emailMessageParameters.getEmail();
@@ -220,7 +283,7 @@ public class EmailSender {
 	/** Send message with error message. Error message will be taken from parameter 
 	 *  @param requestId v_request.requestId
 	 *  @param errorMessage message with error
-	 * @throws EmailSenderException */
+	 *  @throws EmailSenderException */
 	public void sendMessageWithError(Long requestId, String errorMessage)
 			throws AddressException, MessagingException, EmailSenderException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithErrorText(requestId,
@@ -243,6 +306,5 @@ public class EmailSender {
 		message.setSentDate(new Date());
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
-	};
-
+	}
 }

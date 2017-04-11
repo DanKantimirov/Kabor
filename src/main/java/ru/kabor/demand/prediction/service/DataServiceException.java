@@ -1,5 +1,6 @@
 package ru.kabor.demand.prediction.service;
 
+/** Exception for DataService */
 public class DataServiceException extends Exception {
 
 	private static final long serialVersionUID = 7459092831960676456L;

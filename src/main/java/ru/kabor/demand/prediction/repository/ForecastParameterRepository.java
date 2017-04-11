@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 
 import ru.kabor.demand.prediction.entity.ForecastParameter;
 
+/** JpaRepository for ForecastParameter */
 @Repository
 public interface ForecastParameterRepository extends JpaRepository<ForecastParameter, Integer> {
 
