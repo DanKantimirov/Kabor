@@ -3,12 +3,12 @@ package ru.kabor.demand.prediction.utils;
 import java.util.concurrent.Callable;
 
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 import ru.kabor.demand.prediction.r.RUtils;
 
 /** For calculating elasticity in executor service */
-public class MultithreadingElasticityCallable implements Callable<ResponceElasticity> {
+public class MultithreadingElasticityCallable implements Callable<ResponseElasticity> {
 
 	RequestElasticityParameterSingle elasticityParameters;
 	WhsArtTimeline whsArtTimeline;
@@ -26,10 +26,10 @@ public class MultithreadingElasticityCallable implements Callable<ResponceElasti
 	}
 
 	@Override
-	public ResponceElasticity call() throws Exception {
+	public ResponseElasticity call() throws Exception {
 		rUtils.calculateWhsArtTimelineSlope(whsArtTimeline,SMOOTH_TYPE.NO);								//Calculate slope
 		rUtils.calculateWhsArtTimelineTrendSeasonalAndRandom(whsArtTimeline);							//Calculate trand,elasticity and remainder
-		ResponceElasticity res = rUtils.makeElasticity(elasticityParameters, whsArtTimeline, true);		//Calculate elasticity
+		ResponseElasticity res = rUtils.makeElasticity(elasticityParameters, whsArtTimeline, true);		//Calculate elasticity
 		return res;
 	}
 

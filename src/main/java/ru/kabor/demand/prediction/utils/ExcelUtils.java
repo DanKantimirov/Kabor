@@ -50,11 +50,11 @@ public class ExcelUtils {
 		validHeadersPrices.add(4, "price");
 	}
 
-	/** Validation xls file headers
+	/** validation xls file headers
 	 *
-	 * @param file
-	 * @param request_TYPE 
-	 * @throws Exception
+	 * @param file file
+	 * @param request_TYPE type of request 
+	 * @throws Exception headers are not valid
      */
 	public static void validateXLSHeaders(MultipartFile file, String requestType) throws InvalidHeaderException {
 		Workbook workbook = null;
@@ -101,11 +101,11 @@ public class ExcelUtils {
 		}
 	}
 	
-	/** Validation xlsx file headers
+	/** validation xlsx file headers
 	 *
-	 * @param file
-	 * @param request_TYPE 
-	 * @throws Exception
+	 * @param file file
+	 * @param request_TYPE type of request 
+	 * @throws Exception headers are not valid
     */
 	public static void validateXLSXHeaders(MultipartFile file, String requestType) throws InvalidHeaderException {
 		StreamingReader reader = null;
@@ -151,7 +151,13 @@ public class ExcelUtils {
 		}
 	}
 
-	/** Find column in row with  by content*/
+	/** finding column in row by content
+	 * @param workbook workbook
+	 * @param sheet sheet
+	 * @param rowNumber row number
+	 * @param content cell content
+	 * @return column number
+	 */
 	public static Integer findColumnNumberByContent(Workbook workbook, Sheet sheet, Integer rowNumber, String content) {
 		if(content!=null){
 			content = content.trim();
@@ -170,12 +176,23 @@ public class ExcelUtils {
 		return null;
 	}
 
-	/** Reading cell from Excel workbook */
+	/** reading cell from Excel workbook
+	 * @param workbook workbook
+	 * @param row row
+	 * @param columnNumber column number
+	 * @return content of cell
+	 */
 	public static String readValueFromXls(Workbook workbook, Row row, Integer columnNumber) {
 		return readValueFromXls(workbook, row, columnNumber, null);
 	}
 
-	/** Reading cell froxm Excel workbook */
+	/** reading cell from Excel workbook
+	 * @param workbook workbook
+	 * @param row row
+	 * @param columnNumber column number
+	 * @param dateFormat format of date representation
+	 * @return content of cell
+	 */
 	@SuppressWarnings("deprecation")
 	public static String readValueFromXls(Workbook workbook, Row row, Integer columnNumber, SimpleDateFormat dateFormat) {
 		if (workbook == null || row == null) {
@@ -233,6 +250,11 @@ public class ExcelUtils {
 		return cellValue;
 	}
 	
+	/** reading cell content from excel ignoring formulas
+	 * @param cell cell
+	 * @param dateFormat format of date representation
+	 * @return content of cell
+	 */
 	@SuppressWarnings("deprecation")
 	public static String readCellWithoutFormulas(Cell cell, SimpleDateFormat dateFormat){
 		if (cell == null) {
@@ -264,7 +286,12 @@ public class ExcelUtils {
 		return cellValue;
 	}
 	
-	/** Saving workbook to xls file*/
+	/** saving workbook to xls file
+	 * @param folderPath path to folder
+	 * @param fileName filename
+	 * @param workbook workbook
+	 * @throws IOException
+	 */
 	public static void saveXls(String folderPath, String fileName, Workbook workbook) throws IOException {
 		FileOutputStream fileOutputStream = null;
 		String filePath = "";
@@ -291,7 +318,10 @@ public class ExcelUtils {
 		}
 	}
 
-	/** From double to string */
+	/** converting from double to string
+	 * @param d value for converting
+	 * @return
+	 */
 	private static String formatDouble(double d) {
 		String result = "";
 		if (d == (long) d) {
@@ -302,5 +332,4 @@ public class ExcelUtils {
 		result = result.replace(",", ".");
 		return result;
 	}
-	
 }

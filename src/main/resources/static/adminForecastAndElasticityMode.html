@@ -7,7 +7,7 @@
 		<meta name="description" content="Forecasting of demand. Аdmin multiple mode"/>
 		<meta name="author" content="Kantimirov D. Boroda A."/>
 		
-		<title>Forecast multiple (admin mode)</title>
+		<title>Forecast and Elasticity (admin mode)</title>
 		<script src="js/jquery-3.1.1.js"></script>
 		<script src="js/jquery.localScroll.min.js"></script>
 		<script src="js/jquery.scrollTo.min.js"></script>
@@ -44,27 +44,38 @@
 				var duration=$("#predictionDaysInput").val();
 				var predictMethod = $("#predictionMethod").val();
 				var useSmooth = $("#useSmoothInput").val();
+				var inputUseEmail=$("#useEmailInput").val();
+				var inputEmail=$("#EmailInput").val();
+				
+				var myRequestForecast = {
+					requestId:inputRequestId,
+					whsIdBulk:inputWhsIdBulk,
+					artIdBulk:inputArtIdBulk,
+					trainingStart:startDay,
+					trainingEnd:finishDay,
+					forecastDuration:duration,
+					forecastMethod:predictMethod,
+					smoothType:useSmooth
+				};
+				
+				var myRequestElasticity = {
+					requestId:inputRequestId,
+					whsIdBulk:inputWhsIdBulk,
+					artIdBulk:inputArtIdBulk,
+					isSendByEmail:inputUseEmail,
+					email:inputEmail
+				};
 				
 				$.ajax({
-					url : 'forecastmultiple',
+					url : 'forecastandelasticitymultiple',
 					timeout: 180000,
 					type: 'POST',
 					dataType: 'text',
 					contentType: 'application/json',
 					mimeType: 'application/json',
 									
-					data: JSON.stringify(						
-						{
-							requestId:inputRequestId,
-							whsIdBulk:inputWhsIdBulk,
-							artIdBulk:inputArtIdBulk,
-							trainingStart:startDay,
-							trainingEnd:finishDay,
-							forecastDuration:duration,
-							forecastMethod:predictMethod,
-							smoothType:useSmooth
-						}
-					),
+					//data: myJSON,
+					data: JSON.stringify({requestForecastParameterMultiple : myRequestForecast, requestElasticityParameterMultiple : myRequestElasticity}),
 					
 					success: function (data) {
 						$('#start-analyzing-indicator').hide();
@@ -89,6 +100,17 @@
 				});
 			}
 			
+			jQuery().ready(function() {
+				//Default settings
+				$("#useEmailInput").click(function() {
+					if( $("#useEmailInput option:selected").text()=="NO" ){
+						$("#EmailInput").prop("disabled",true);
+					} else{
+						$("#EmailInput").prop("disabled",false);
+					}
+				});
+			});
+			
 		</script>
 	</head>
 	
@@ -105,7 +127,7 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			  </button>
-			  <a class="navbar-brand" href="#">Forecast multiple (admin mode)</a>
+			  <a class="navbar-brand" href="#">Forecast and Elasticity (admin mode)</a>
 			</div>
 		
 			<!-- Collect the nav links, forms, and other content for toggling -->
@@ -129,7 +151,8 @@
 			<form class="form-horizontal" id="contactForm"  onsubmit="doAjax();return false;">
 				<fieldset>
 					<!-- Form Name -->
-					<legend>Forecasting of demand for many shops and many products by requestId.</legend>
+					<legend>Calculating of elasticity for many shops and many products by requestId.</legend>
+					
 					
 					<!-- Text input-->
 					<div class="form-group">
@@ -225,6 +248,27 @@
 						  <option value="NO">None</option>
 						</select>
 						<span class="help-block">Method of deleting extremums</span>  
+					  </div>
+					</div>
+					
+					<!-- Select Basic -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="useEmailInput">Send to Email</label>
+					  <div class="col-md-4">
+						<select id="useEmailInput" name="useEmailInput" class="form-control">
+						  <option value="true">YES</option>
+						  <option value="false">NO</option>
+						</select>
+						<span class="help-block">Should send result to email</span>  
+					  </div>
+					</div>
+					
+					<!-- EmailInput -->
+					<div class="form-group">
+					  <label class="col-md-4 control-label" for="EmailInput">Email: </label>  
+					  <div class="col-md-4">
+					  <input id="EmailInput" name="EmailInput" placeholder="somemail@yahoo.com" class="form-control input-md" type="text"></input>
+					  <span class="help-block">Email for sending result of calculating</span>  
 					  </div>
 					</div>
 					

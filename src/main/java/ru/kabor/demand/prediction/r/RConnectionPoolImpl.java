@@ -100,7 +100,6 @@ public class RConnectionPoolImpl implements Runnable, RConnectionPool {
 		}
 	}
 	
-	
 	/** Commands when work with connections
 	 *  @param connectionOpenCommanList Executes only once when open new connection
 	 *  @param connectionGetCommandList Executes each time when get connection from pool
@@ -118,11 +117,7 @@ public class RConnectionPoolImpl implements Runnable, RConnectionPool {
 		}
 	}
 	
-	/** Try to connect to R with current settings
-	 * @throws RConnectionPoolException 
-	 * @return Result of creating connection pool
-	 * @throws RConnectionPoolException 
-	 * @throws RserveException */
+	@Override
 	public synchronized Boolean attachToRserve() throws  RConnectionPoolException, RserveException {
 
 		if (this.isPoolAttached) {
@@ -204,8 +199,7 @@ public class RConnectionPoolImpl implements Runnable, RConnectionPool {
 		}
 	}
 	
-	/** Getting connection from pool
-	 * @throws RConnectionPoolException */
+	@Override
 	public synchronized RCommonConnection getConnection() throws RConnectionPoolException  {
         if (!this.availableConnectionsMap.isEmpty()) {
         	Optional<RCommonConnection> optionalConnection = this.availableConnectionsMap.values().stream().findFirst();
@@ -252,6 +246,7 @@ public class RConnectionPoolImpl implements Runnable, RConnectionPool {
         } catch (RserveException e) {}// It's impossible because only one place can throw exception (executeConnectionGetCommands). But that set of command already executed in attaching connection.
     }
     
+    @Override
     public synchronized void releaseConnection(RCommonConnection connection) throws RConnectionPoolException{
 		if (this.isPoolAttached == false) {
 			throw new RConnectionPoolException("Pool is not attached to R. Please, execute attachToRserve");
@@ -266,9 +261,7 @@ public class RConnectionPoolImpl implements Runnable, RConnectionPool {
 		notifyAll();
     }
 
-	
 	@Override
-	/** Detach pool from Rserve and close all connections */
 	public synchronized void detachFromRserve() {
 		this.busyConnectionsMap.values().stream().forEach((e)->{
 			try {

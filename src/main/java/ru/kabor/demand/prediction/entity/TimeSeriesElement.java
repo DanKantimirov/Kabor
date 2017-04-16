@@ -5,12 +5,17 @@ package ru.kabor.demand.prediction.entity;
  * parts
  */
 public class TimeSeriesElement {
-
-	private Double actualValue;		//value from statistic
-	private Double seasonalValue;	//seasonality
-	private Double trendValue;		//trand
-	private Double randomValue;		//random
-	private Double smoothedValue;	//smooted value
+	
+	/** value from statistic*/
+	private Double actualValue;
+	/** seasonality*/
+	private Double seasonalValue;
+	/** trand*/
+	private Double trendValue;
+	/** random*/
+	private Double randomValue;
+	/** smooted value*/
+	private Double smoothedValue;
 
 	public TimeSeriesElement(Double actualValue) {
 		super();

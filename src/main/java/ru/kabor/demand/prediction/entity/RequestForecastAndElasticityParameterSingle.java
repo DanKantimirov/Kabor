@@ -1,10 +1,21 @@
 package ru.kabor.demand.prediction.entity;
 
+import java.io.Serializable;
 
-/** That class describes request for making forecast and calculating elasticity together*/
-public class RequestForecastAndElasticityParameterSingle {
-	
+import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+/** That class describes request for making forecast and calculating elasticity together (one shop and one product)*/
+@XmlRootElement
+@XmlAccessorType(javax.xml.bind.annotation.XmlAccessType.FIELD)
+public class RequestForecastAndElasticityParameterSingle implements Serializable{
+	@Transient
+	private static final long serialVersionUID = -6278167932899372114L;
+	@XmlElement
 	private RequestForecastParameterSingle requestForecastParameter;
+	@XmlElement
 	private RequestElasticityParameterSingle requestElasticityParameter;
 
 	public RequestForecastAndElasticityParameterSingle() {

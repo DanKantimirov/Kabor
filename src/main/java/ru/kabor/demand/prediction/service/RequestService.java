@@ -10,49 +10,52 @@ import java.util.Map;
 
 /** It contains methods for working with requests to server */
 public interface RequestService {
-
-    /**
-     * Create request in db.
-     * @param reqParams
-     * @param documentPath
+	
+    /** Create request in db.
+     * @param reqParams parameters of request
+     * @param documentPath file
+     * @return request object
+     * @throws DataServiceException
      */
-    Request createRequest(Map<String, String[]> reqParams, MultipartFile documentPath) throws DataServiceException;
-
-    /**
-     * Validate file and save request to db.
-     * @param file
-     * @param reqParams
+    Request createRequest(Map<String, String[]> reqParams, MultipartFile documentPath) throws DataServiceException;   
+    
+    /** Validate file and save request to db.
+     * @param file file
+     * @param reqParams  parameters of request
+     * @return request object
      * @throws InvalidHeaderException
      * @throws IOException
      * @throws InvalidFormatException
+     * @throws DataServiceException
      */
     Request addNewRequest(MultipartFile file, Map<String, String[]> reqParams)
             throws InvalidHeaderException, IOException, InvalidFormatException, DataServiceException;
 
-    /**
-     * It reads request from db and parses its data to v_sales_rest
-     * @return imported request, null if nothing changed
+    /**read request from db and parses its data to v_sales_rest
+     * @return request object
      * @throws IOException
      * @throws InvalidFormatException
      */
     Request importRawRequest() throws IOException, InvalidFormatException;
     
-    /**
-     * It makes prediction by data presented in tables v_forecast_parameter and v_sales_rest
-     * @return path to xls file with result
-     * */
+    /** make prediction by data presented in tables v_forecast_parameter and v_sales_rest
+     * @param requestId id of request
+     * @return filename
+     * @throws DataServiceException
+     */
     String makeRequestPrediction(Integer requestId) throws DataServiceException;
     
-    /**
-     * It calculates elasticity by data presented in table v_sales_rest with prices
-     * @return path to xls file with result
-     * */
+    /** calculate elasticity by data presented in table v_sales_rest with prices
+     * @param requestId id of request
+     * @return filename
+     * @throws DataServiceException
+     */
     String makeRequestElasticity(Integer requestId) throws DataServiceException;
 
-    /**
-     * It makes prediction and calculates elasticity by data presented in tables v_forecast_parameter and v_sales_rest
-     * @return path to xls file with result
-     * @throws DataServiceException 
-     * */
+	/** make prediction and calculates elasticity by data presented in tables v_forecast_parameter and v_sales_rest
+	 * @param requestId id of request
+	 * @return  filename
+	 * @throws DataServiceException
+	 */
 	String makeRequestAndElasticityPrediction(Integer requestId) throws DataServiceException;
 }

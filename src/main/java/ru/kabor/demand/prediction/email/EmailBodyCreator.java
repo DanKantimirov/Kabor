@@ -16,6 +16,10 @@ public class EmailBodyCreator {
 	@Autowired
 	DataRepository dataRepository;
 
+	/** Create email parameter when user just sended request to service
+	 * @param requestId id of request
+	 * @return parameter of email for user
+	 */
 	public EmailMessageParameters getMessageRequestAddedText(Long requestId){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
@@ -30,6 +34,10 @@ public class EmailBodyCreator {
 		return emailMessageParameters;
 	}
 
+	/** Create email parameter when server finished making forecast
+	 * @param requestId id of request
+	 * @return parameter of email for user
+	 */
 	public EmailMessageParameters getMessageWithForecastResultText(Long requestId){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
@@ -46,7 +54,10 @@ public class EmailBodyCreator {
 		return emailMessageParameters;
 	}
 	
-
+	/** Create email parameter when server finished calculating elasticity
+	 * @param requestId id of request
+	 * @return parameter of email for user
+	 */
 	public EmailMessageParameters getMessageWithElasticityResultText(Long requestId){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
@@ -63,6 +74,12 @@ public class EmailBodyCreator {
 		return emailMessageParameters;
 	}
 	
+	/** Create email parameter when server finished calculating elasticity
+	 * @param requestId id of request
+	 * @param userEmail email where to send
+	 * @param filePath path to attachment file 
+	 * @return parameter of email for user
+	 */
 	public EmailMessageParameters getMessageWithElasticityResultText(Long requestId, String userEmail, String filePath){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		
@@ -77,6 +94,10 @@ public class EmailBodyCreator {
 		return emailMessageParameters;
 	}
 	
+	/** Create email parameter when occurred  exception
+	 * @param requestId id of request
+	 * @return parameter of email for user
+	 */
 	public EmailMessageParameters getMessageWithErrorText(Long requestId){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);
@@ -92,6 +113,11 @@ public class EmailBodyCreator {
 		return emailMessageParameters;
 	}
 	
+	/** Create email parameter when occurred  exception
+	 * @param requestId id of request
+	 * @param errorMessage error message
+	 * @return parameter of email for user
+	 */
 	public EmailMessageParameters getMessageWithErrorText(Long requestId, String errorMessage){
 		StringBuilder messageBodyBuilder = new StringBuilder("");
 		String userEmail = this.dataRepository.getEmailByRequestId(requestId);

@@ -19,17 +19,13 @@ public class VerifyCaptcha {
 	private static final Logger LOG = LoggerFactory.getLogger(VerifyCaptcha.class);
 	public static final String REQUEST_URL = "https://www.google.com/recaptcha/api/siteverify";
 	private final static String USER_AGENT = "Mozilla/5.0";
-
-	/**
-	 * Sends request to Google for checking captcha
-	 * 
-	 * @param secretKey
-	 *            secret key of site
-	 * @param gRecaptchaResponse
-	 *            users value from form
-	 * @param isRealMode
-	 *            false - for testing(just check whether field is empty or not),
-	 *            true - for real mode
+	
+	
+	/** Sends request to Google for checking captcha
+	 * @param secretKey secret key of site
+	 * @param gRecaptchaResponse users value from form
+	 * @param isRealMode  true - for real mode, false - for testing(just check whether field is empty or not)
+	 * @return result of checking
 	 */
 	public static boolean verify(String secretKey, String gRecaptchaResponse, Boolean isRealMode) {
 		if (gRecaptchaResponse == null || "".equals(gRecaptchaResponse)) {

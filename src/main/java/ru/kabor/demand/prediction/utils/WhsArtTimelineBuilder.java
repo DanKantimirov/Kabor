@@ -13,6 +13,10 @@ import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 /** It builds WhsArtTimeline from SqlRowSet*/
 public class WhsArtTimelineBuilder {
 	
+	/** build whsArtTimeLine (list) with prices
+	 * @param rowSet sql rowSet
+	 * @return whsArtTimeLine (list)
+	 */
 	public static List<WhsArtTimeline> buildWhsArtTimelineListWithPrices(SqlRowSet rowSet) {
 		List<WhsArtTimeline> result = new ArrayList<>();
 		Integer whsIdColumn = rowSet.findColumn("whs_id");
@@ -52,6 +56,10 @@ public class WhsArtTimelineBuilder {
 		return result;
 	}
 	
+	/** build whsArtTimeLine with prices
+	 * @param rowSet sql rowSet
+	 * @return whsArtTimeLine
+	 */
 	public static WhsArtTimeline buildWhsArtTimelineWithPrices(SqlRowSet rowSet) {
 		WhsArtTimeline result = new WhsArtTimeline();
 		Integer whsIdColumn = rowSet.findColumn("whs_id");

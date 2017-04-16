@@ -12,7 +12,7 @@ import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 
 /** That class describes JSON request from admin mode for making forecast for many shops and many products */
-@XmlRootElement
+@XmlRootElement(name="RequestForecastParameterMultiple")
 @XmlAccessorType(javax.xml.bind.annotation.XmlAccessType.FIELD)
 public class RequestForecastParameterMultiple implements Serializable {
 

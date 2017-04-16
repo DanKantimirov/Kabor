@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 /** That class describes JSON request from admin mode for calculating elasticity for many shops and many products */
-@XmlRootElement
+@XmlRootElement(name="RequestElasticityParameterMultiple")
 @XmlAccessorType(javax.xml.bind.annotation.XmlAccessType.FIELD)
 public class RequestElasticityParameterMultiple implements Serializable {
 

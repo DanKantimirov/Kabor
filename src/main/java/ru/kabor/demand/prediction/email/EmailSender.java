@@ -63,6 +63,9 @@ public class EmailSender {
 		super();
 	}
 
+	/** Inits parameters
+	 * @throws EmailSenderException
+	 */
 	@PostConstruct
 	private void init() throws EmailSenderException {
 		if (this.loginSuffix != null && !this.loginSuffix.trim().equals("")) {
@@ -111,12 +114,12 @@ public class EmailSender {
 		return session;
 	}
 
-	/**
-	 * Send user comment to our email
-	 * @param firstname
-	 * @param lastname
-	 * @param clientEmail
-	 * @param comments
+	
+	/** Send user comment to our email
+	 * @param firstname firstname
+	 * @param lastname lastname
+	 * @param clientEmail clientEmail
+	 * @param comments comment
 	 */
 	public void sendContactEmail(String firstname, String lastname, String clientEmail, String comments) {
 		try {
@@ -134,11 +137,12 @@ public class EmailSender {
 			LOG.error("Can't send email.", e);
 		}
 	}
-
-	/**
-	 * Send message that we began process forecast
-	 * @param requestId
-     */
+	
+	/** Send message to user that we got user's request
+	 * @param requestId id of request
+	 * @throws EmailSenderException
+	 * @throws MessagingException
+	 */
 	public void sendMessageRequestAdded(Long requestId) throws EmailSenderException, MessagingException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageRequestAddedText(requestId);
 		String userEmail = emailMessageParameters.getEmail();
@@ -159,11 +163,14 @@ public class EmailSender {
 		message.setSentDate(new Date());
 		message.setContent(messageBody, "text/html");
 		Transport.send(message);
-	}
-
-	/** Send message with link to forecast demand
-	 * @param requestId v_request.requestId
-	 * @throws EmailSenderException */
+	}	
+	
+	/** Send message to user that forecast has been successfully fulfilled
+	 * @param requestId id of request
+	 * @throws AddressException
+	 * @throws MessagingException
+	 * @throws EmailSenderException
+	 */
 	public void sendMessageWithForecastResult(Long requestId)
 			throws AddressException, MessagingException, EmailSenderException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithForecastResultText(requestId);
@@ -192,9 +199,12 @@ public class EmailSender {
 		Transport.send(message);
 	};
 	
-	/** Send message with link to elasticity calculation
-	 * @param requestId v_request.requestId
-	 * @throws EmailSenderException */
+	/** Send message to user that elasticity has been successfully calculated
+	 * @param requestId id of request
+	 * @throws AddressException
+	 * @throws MessagingException
+	 * @throws EmailSenderException
+	 */
 	public void sendMessageWithElasticityResult(Long requestId)
 			throws AddressException, MessagingException, EmailSenderException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithElasticityResultText(requestId);
@@ -223,9 +233,15 @@ public class EmailSender {
 		Transport.send(message);
 	};
 	
-	/** Send message with link to elasticity calculation in database mode
-	 * @param requestId v_request.requestId
-	 * @throws EmailSenderException */
+	
+	/** Send message to user that elasticity has been successfully calculated (database mode)
+	 * @param requestId id of request
+	 * @param userEmail email of user
+	 * @param filePath path to result file
+	 * @throws AddressException
+	 * @throws MessagingException
+	 * @throws EmailSenderException
+	 */
 	public void sendMessageWithElasticityResult (Long requestId, String userEmail, String filePath) throws AddressException, MessagingException, EmailSenderException{
 	
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithElasticityResultText(requestId, userEmail, filePath);
@@ -255,9 +271,12 @@ public class EmailSender {
 	};
 	
 
-	/** Send message with error message. Error message will be taken from v_request.response_text 
-	 *  @param requestId v_request.requestId
-	 *  @throws EmailSenderException */
+	/** Send message to user that exception occurred
+	 * @param requestId id of request
+	 * @throws AddressException
+	 * @throws MessagingException
+	 * @throws EmailSenderException
+	 */
 	public void sendMessageWithError(Long requestId) throws AddressException, MessagingException, EmailSenderException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithErrorText(requestId);
 		String userEmail = emailMessageParameters.getEmail();
@@ -280,10 +299,13 @@ public class EmailSender {
 		Transport.send(message);
 	};
 	
-	/** Send message with error message. Error message will be taken from parameter 
-	 *  @param requestId v_request.requestId
-	 *  @param errorMessage message with error
-	 *  @throws EmailSenderException */
+	/** Send message to user that exception occurred
+	 * @param requestId id of request
+	 * @param errorMessage message with error
+	 * @throws AddressException
+	 * @throws MessagingException
+	 * @throws EmailSenderException
+	 */
 	public void sendMessageWithError(Long requestId, String errorMessage)
 			throws AddressException, MessagingException, EmailSenderException {
 		EmailMessageParameters emailMessageParameters = this.emailBodyCreator.getMessageWithErrorText(requestId,

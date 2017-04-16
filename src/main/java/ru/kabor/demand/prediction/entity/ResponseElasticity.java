@@ -5,22 +5,27 @@ import java.util.Arrays;
 import java.util.List;
 
 /** That class describes result of calculating elasticity for one shop and one product */
-public class ResponceElasticity {
+public class ResponseElasticity {
 
 	private Integer whsId;
 	private Integer artId;
 	private String formula;
-	private double[] functionParameters;									//parameters of function
-	private Double sigma;													//error of model
-	private Boolean hasError = false;										//is all right
-	private String errorMessage = "";										//error message if not all right
-	private List<TimeMomentDescription> timeMoments = new ArrayList<>();	//input information about time moments with calculated trand, seasonality and random
+	/** parameters of the elasticity function*/
+	private double[] functionParameters;
+	/** error of the model*/
+	private Double sigma;
+	/** is all right*/
+	private Boolean hasError = false;
+	/** error message if not all right*/
+	private String errorMessage = "";
+	/** input information about time moments with calculated trand, seasonality and random*/
+	private List<TimeMomentDescription> timeMoments = new ArrayList<>();
 
-	public ResponceElasticity() {
+	public ResponseElasticity() {
 		super();
 	}
 
-	public ResponceElasticity(Integer whsId, Integer artId) {
+	public ResponseElasticity(Integer whsId, Integer artId) {
 		super();
 		this.whsId = whsId;
 		this.artId = artId;
@@ -58,7 +63,7 @@ public class ResponceElasticity {
 
 	@Override
 	public String toString() {
-		return "ResponceElasticity [whsId=" + whsId + ", artId=" + artId + ", formula=" + formula + ", functionParameters=" + Arrays.toString(functionParameters) + ", sigma="
+		return "ResponseElasticity [whsId=" + whsId + ", artId=" + artId + ", formula=" + formula + ", functionParameters=" + Arrays.toString(functionParameters) + ", sigma="
 				+ sigma + ", hasError=" + hasError + ", errorMessage=" + errorMessage + ", timeMoments=" + timeMoments + "]";
 	}
 

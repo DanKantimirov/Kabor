@@ -3,12 +3,12 @@ package ru.kabor.demand.prediction.utils;
 import java.util.concurrent.Callable;
 
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceForecast;
+import ru.kabor.demand.prediction.entity.ResponseForecast;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 import ru.kabor.demand.prediction.r.RUtils;
 
 /** For making forecast in executor service */
-public class MultithreadingForecastCallable implements Callable<ResponceForecast> {
+public class MultithreadingForecastCallable implements Callable<ResponseForecast> {
 
 	RequestForecastParameterSingle forecastParameters;
 	WhsArtTimeline whsArtTimeline;
@@ -23,10 +23,10 @@ public class MultithreadingForecastCallable implements Callable<ResponceForecast
 	}
 
 	@Override
-	public ResponceForecast call() throws Exception {
+	public ResponseForecast call() throws Exception {
 		rUtils.calculateWhsArtTimelineSlope(whsArtTimeline,forecastParameters.getSmoothType());			//calculate slope
 		rUtils.calculateWhsArtTimelineTrendSeasonalAndRandom(whsArtTimeline);							//calculate trand,elasticity and remainder
-		ResponceForecast res =  rUtils.makeForecast(forecastParameters, whsArtTimeline);
+		ResponseForecast res =  rUtils.makeForecast(forecastParameters, whsArtTimeline);
 		return res;
 	}
 

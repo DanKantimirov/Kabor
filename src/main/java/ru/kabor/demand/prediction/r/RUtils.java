@@ -19,15 +19,15 @@ import org.springframework.stereotype.Component;
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterSingle;
 import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterSingle;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
-import ru.kabor.demand.prediction.entity.ResponceForecast;
-import ru.kabor.demand.prediction.entity.ResponceForecastAndElasticity;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
+import ru.kabor.demand.prediction.entity.ResponseForecast;
+import ru.kabor.demand.prediction.entity.ResponseForecastAndElasticity;
 import ru.kabor.demand.prediction.entity.SalesAndPriceDeviation;
 import ru.kabor.demand.prediction.entity.TimeMomentDescription;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 import ru.kabor.demand.prediction.service.DataServiceException;
-import ru.kabor.demand.prediction.utils.ResponceElasticityBuilder;
-import ru.kabor.demand.prediction.utils.ResponceForecastBuilder;
+import ru.kabor.demand.prediction.utils.ResponseElasticityBuilder;
+import ru.kabor.demand.prediction.utils.ResponseForecastBuilder;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 
 /** It contains all commands for interaction with R */
@@ -49,6 +49,9 @@ public class RUtils {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(RUtils.class);
 	
+	/** @PostConstruct
+	 * @throws Exception
+	 */
 	@PostConstruct
 	public void initIt() throws Exception {
 		this.rConnectionPool = new RConnectionPoolImpl();
@@ -63,12 +66,22 @@ public class RUtils {
 		this.rConnectionPool.attachToRserve();
 	}
 	
+	/** @PreDestroy
+	 * @throws Exception
+	 */
 	@PreDestroy
 	public void cleanUp() throws Exception {
 		this.rConnectionPool.detachFromRserve();
 	}
 	
-	public ResponceForecast makeForecast(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+	
+	/** Calculate forecast in R
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return	response with result of forecast
+	 * @throws Exception
+	 */
+	public ResponseForecast makeForecast(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
 		
 		LOG.info("Forecast. whs_id:" + forecastParameters.getWhsId() + " art_id:" + forecastParameters.getArtId());
 		
@@ -100,10 +113,16 @@ public class RUtils {
 		return null;
 	}
 	
-	private ResponceForecast makePredictionAutoChoose(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+	/** Use ARIMA, ETS and TBATS for making forecast (choose the best mode) 
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return response with result of forecast
+	 * @throws Exception
+	 */
+	private ResponseForecast makePredictionAutoChoose(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
 		//Select between ARIMA, ETS and TBATS
 		RCommonConnection connection = null;
-		ResponceForecast result = new ResponceForecast();
+		ResponseForecast result = new ResponseForecast();
 		try {
 
 			String salesSmoothedValues = whsArtTimeline.getSalesSmootedSortedByDate();
@@ -115,8 +134,8 @@ public class RUtils {
 			connection.voidEval("myvector <- c(" + salesSmoothedValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
 			
-			connection.voidEval("mytsets <- ets(myts)");
-			connection.voidEval("mytsarima <- auto.arima(myts)");
+			connection.voidEval("mytsets <- ets(y=myts, additive.only=FALSE)");
+			connection.voidEval("mytsarima <- auto.arima(y=myts, seasonal=TRUE)");
 			connection.voidEval("mytstbats <- tbats(myts)");
 
 			
@@ -149,7 +168,7 @@ public class RUtils {
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			
 			double[] resultFromR = forecastREXP.asDoubles();
-			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
+			result = ResponseForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
 			return result;
 		} catch (Exception e) {
 			LOG.error("Forecast exception:" + e.toString());
@@ -165,9 +184,15 @@ public class RUtils {
 		}
 	}
 	
-	private ResponceForecast makePredictionTBATS(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+	/** Use TBATS for making forecast 
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return response with result of forecast
+	 * @throws Exception
+	 */
+	private ResponseForecast makePredictionTBATS(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
 		RCommonConnection connection = null;
-		ResponceForecast result = new ResponceForecast();
+		ResponseForecast result = new ResponseForecast();
 		try {
 
 			String salesSmootedValues = whsArtTimeline.getSalesSmootedSortedByDate();
@@ -178,13 +203,13 @@ public class RUtils {
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesSmootedValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
-			connection.voidEval("mytstbats <- tbats(myts)");
+			connection.voidEval("mytstbats <- tbats(y=myts, seasonal.periods=7)");
 			connection.voidEval("mytimeforecast1 <-forecast(mytstbats, h="+ forecastParameters.getForecastDuration() + ")");
 			
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = forecastREXP.asDoubles();
 
-			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
+			result = ResponseForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
 			return result;
 		} catch (Exception e) {
 			LOG.error("Forecast exception:" + e.toString());
@@ -199,10 +224,16 @@ public class RUtils {
 			}
 		}
 	}
-
-	private ResponceForecast makePredictionETS(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+	
+	/** Use ETS for making forecast 
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return response with result of forecast
+	 * @throws Exception
+	 */
+	private ResponseForecast makePredictionETS(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
 		RCommonConnection connection = null;
-		ResponceForecast result = new ResponceForecast();
+		ResponseForecast result = new ResponseForecast();
 		try {
 
 			String salesSmootedValues = whsArtTimeline.getSalesSmootedSortedByDate();
@@ -213,13 +244,13 @@ public class RUtils {
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesSmootedValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
-			connection.voidEval("mytsets <- ets(myts)");
+			connection.voidEval("mytsets <- ets(y=myts, additive.only=FALSE)");
 			connection.voidEval("mytimeforecast1 <-forecast(mytsets, h="+ forecastParameters.getForecastDuration() + ")");
 			
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = forecastREXP.asDoubles();
 
-			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
+			result = ResponseForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
 			return result;
 		} catch (Exception e) {
 			LOG.error("Forecast exception:" + e.toString());
@@ -235,6 +266,12 @@ public class RUtils {
 		}
 	}
 
+	
+	/** Calculate sales smoothed values for whsArtTimeline
+	 * @param whsArtTimeline sales and rests
+	 * @param slope_type type of slope
+	 * @throws Exception
+	 */
 	public void calculateWhsArtTimelineSlope(WhsArtTimeline whsArtTimeline, SMOOTH_TYPE slope_type) throws Exception {
 		switch (slope_type) {
 			case NO: {
@@ -252,6 +289,10 @@ public class RUtils {
 		}
 	}
 	
+	/** Calculate sales trend, seasonal and random values for whsArtTimeline
+	 * @param whsArtTimeline sales and rests
+	 * @throws Exception
+	 */
 	public void calculateWhsArtTimelineTrendSeasonalAndRandom(WhsArtTimeline whsArtTimeline) throws Exception {
 		// Make timeSeries
 		RCommonConnection connection = null;
@@ -295,11 +336,16 @@ public class RUtils {
 		}
 	}
 	
-
-	private ResponceForecast makePredictionHoltWinters(RequestForecastParameterSingle forecastParameters,	WhsArtTimeline whsArtTimeline) throws Exception {
+	/** Use HoltWinters for making forecast 
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return response with result of forecast
+	 * @throws Exception
+	 */
+	private ResponseForecast makePredictionHoltWinters(RequestForecastParameterSingle forecastParameters,	WhsArtTimeline whsArtTimeline) throws Exception {
 		RCommonConnection connection = null;
 
-		ResponceForecast result = new ResponceForecast();
+		ResponseForecast result = new ResponseForecast();
 		try {
 			String salesSmootedValues = whsArtTimeline.getSalesSmootedSortedByDate();
 			LocalDate startTraining = whsArtTimeline.getTimeMoments().get(0).getTimeMoment();
@@ -313,7 +359,7 @@ public class RUtils {
 			connection.voidEval("mytimeforecast1 <- forecast.HoltWinters(mytimeWinter, h="+ forecastParameters.getForecastDuration() + ")");
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = forecastREXP.asDoubles();
-			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
+			result = ResponseForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
 			return result;
 			
 		} catch (Exception e) {
@@ -330,9 +376,15 @@ public class RUtils {
 		}
 	}
 	
-	private ResponceForecast makePredictionArimaAuto(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+	/** Use ARIMA for making forecast 
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return response with result of forecast
+	 * @throws Exception
+	 */
+	private ResponseForecast makePredictionArimaAuto(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
 		RCommonConnection connection = null;
-		ResponceForecast result = new ResponceForecast();
+		ResponseForecast result = new ResponseForecast();
 		try {
 			
 			String salesSmootedValues = whsArtTimeline.getSalesSmootedSortedByDate();
@@ -343,13 +395,13 @@ public class RUtils {
 			connection = this.rConnectionPool.getConnection();
 			connection.voidEval("myvector <- c(" + salesSmootedValues + ")");
 			connection.voidEval("myts <-ts(myvector,  freq=7, start=c(" + year + "," + dayOfYear + "))");
-			connection.voidEval("mytsarima <- auto.arima(myts)");
+			connection.voidEval("mytsarima <- auto.arima(y=myts, seasonal=TRUE)");
 			connection.voidEval("mytimeforecast1 <-forecast(mytsarima, h="+ forecastParameters.getForecastDuration() + ")");
 			
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = forecastREXP.asDoubles();
 
-			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
+			result = ResponseForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
 			return result;
 		} catch (Exception e) {
 			LOG.error("Forecast exception:" + e.toString());
@@ -365,9 +417,15 @@ public class RUtils {
 		}
 	}
 	
-	private ResponceForecast makePredictionNeuralNetwork(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
+	/** Use NeuralNetwork for making forecast (only 5 days)
+	 * @param forecastParameters parameters of forecast
+	 * @param whsArtTimeline sales and rests
+	 * @return response with result of forecast
+	 * @throws Exception
+	 */
+	private ResponseForecast makePredictionNeuralNetwork(RequestForecastParameterSingle forecastParameters, WhsArtTimeline whsArtTimeline) throws Exception {
 		RCommonConnection connection = null;
-		ResponceForecast result = new ResponceForecast();
+		ResponseForecast result = new ResponseForecast();
 		try {
 
 			String salesSmootedValues = whsArtTimeline.getSalesSmootedSortedByDate();
@@ -387,7 +445,7 @@ public class RUtils {
 			REXP forecastREXP = connection.parseAndEval("myobj <- as.numeric(mytimeforecast1$mean)");
 			double[] resultFromR = forecastREXP.asDoubles();
 
-			result = ResponceForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
+			result = ResponseForecastBuilder.buildResponseForecast(forecastParameters,whsArtTimeline, resultFromR);
 			return result;
 		} catch (Exception e) {
 			LOG.error("Forecast exception:" + e.toString());
@@ -403,6 +461,10 @@ public class RUtils {
 		}
 	}
 	
+	/** Calculate sales smoothed values for whsArtTimeline when slope_type = Yes
+	 * @param whsArtTimeline sales and rests
+	 * @throws Exception
+	 */
 	private void makeWhsArtTimelineSmoothYes(WhsArtTimeline whsArtTimeline) throws Exception {
 		Integer countDaysWithoutSales = 0;
 		Double averageSale = 0.0;
@@ -429,12 +491,21 @@ public class RUtils {
 		return;
 	}
 	
+	/** Calculate sales smoothed values for whsArtTimeline when slope_type = No
+	 * @param whsArtTimeline sales and rests
+	 * @throws Exception
+	 */
 	private void makeWhsArtTimelineSmoothNo(WhsArtTimeline whsArtTimeline) {
 		for(TimeMomentDescription timeMoment:whsArtTimeline.getTimeMoments()){
 			timeMoment.getSales().setSmoothedValue(timeMoment.getSales().getActualValue());
 		}
 	}
 	
+	/** Make smoothing by sales and rests
+	 * @param artTimeline sales and rests
+	 * @return List of smoothed values (Double)
+	 * @throws Exception
+	 */
 	private List<Double> makeLoess(WhsArtTimeline artTimeline) throws Exception{
 		RCommonConnection connection = null;
 		List<Double> result = new ArrayList<Double>(artTimeline.getTimeMoments().size());
@@ -471,7 +542,10 @@ public class RUtils {
 		return result;
 	}
 	
-	/** Prepare Arrasys of price and sales differences */
+	/** Prepare Arrasy of price and sales differences
+	 * @param whsArtTimeline sales, rests and prices
+	 * @return arrasys of price and sales differences
+	 */
 	private List<SalesAndPriceDeviation> prepareXdataAndYdataForElasticity(WhsArtTimeline whsArtTimeline) {
 		List<SalesAndPriceDeviation> salesAndPriceDeviationList = new ArrayList<>();
 
@@ -509,17 +583,32 @@ public class RUtils {
 		return salesAndPriceDeviationList;
 	}
 	
+	/** Get sales difference connected by comma
+	 * @param salesAndPricesDeviationLists arrasys of price and sales differences
+	 * @return sales difference connected by comma
+	 */
 	private String getSalesDeviationFormatted(List<SalesAndPriceDeviation> salesAndPricesDeviationLists){
 		String result = salesAndPricesDeviationLists.stream().map (e -> e.getSalesDeviation().toString()).collect(Collectors.joining (","));
 		return result;
 	}
 	
+	/** Get prices difference connected by comma
+	 * @param salesAndPricesDeviationLists
+	 * @return prices difference connected by comma
+	 */
 	private String getPricesDeviationFormatted(List<SalesAndPriceDeviation> salesAndPricesDeviationLists){
 		String result = salesAndPricesDeviationLists.stream().map (e -> e.getPriceDeviatin().toString()).collect(Collectors.joining (","));
 		return result;
 	}
 
-	public ResponceElasticity makeElasticity(RequestElasticityParameterSingle elasticityParameter, WhsArtTimeline whsArtTimeline, Boolean isResultWithTimeMoments) throws Exception  {
+	/** Calculate elasticity
+	 * @param elasticityParameter parameters of calculating elasticity
+	 * @param whsArtTimeline sales and rests
+	 * @param isResultWithTimeMoments include input time moments in result 
+	 * @return response of elasticity
+	 * @throws Exception
+	 */
+	public ResponseElasticity makeElasticity(RequestElasticityParameterSingle elasticityParameter, WhsArtTimeline whsArtTimeline, Boolean isResultWithTimeMoments) throws Exception  {
 		
 		LOG.info("Elasticity. whs_id:" + elasticityParameter.getWhsId() + " art_id:" + elasticityParameter.getArtId());
 		if (whsArtTimeline.getTimeMoments().size() < 3) {
@@ -645,9 +734,9 @@ public class RUtils {
 				bestModelCoeff = lineCoef;
 				bestModelError = 0.0;
 			}
-			ResponceElasticity result = new ResponceElasticity();
+			ResponseElasticity result = new ResponseElasticity();
 			
-			result = ResponceElasticityBuilder.buildSuccessResponseElasticity(elasticityParameter, whsArtTimeline, bestModelFormula, bestModelCoeff, bestModelError,isResultWithTimeMoments);
+			result = ResponseElasticityBuilder.buildSuccessResponseElasticity(elasticityParameter, whsArtTimeline, bestModelFormula, bestModelCoeff, bestModelError,isResultWithTimeMoments);
 			return result;
 		} catch (Exception e) {
 			LOG.error("Forecast exception:" + e.toString());
@@ -663,26 +752,31 @@ public class RUtils {
 		}
 	}
 
-	public ResponceForecastAndElasticity makeForecastAndElasticity(RequestForecastAndElasticityParameterSingle requestParameter, WhsArtTimeline whsArtTimeline) {
-		ResponceForecast responceForecast = null;
-		ResponceElasticity responceElasticity = null;
+	/** Calculate forecast and elasticity together
+	 * @param requestParameter	parameters of forecast and elasticity
+	 * @param whsArtTimeline sales and rests
+	 * @return result of forecast and elasticity together
+	 */
+	public ResponseForecastAndElasticity makeForecastAndElasticity(RequestForecastAndElasticityParameterSingle requestParameter, WhsArtTimeline whsArtTimeline) {
+		ResponseForecast responseForecast = null;
+		ResponseElasticity responseElasticity = null;
 		LOG.info("Forecast and Elasticity. whs_id:" + requestParameter.getRequestForecastParameter().getWhsId() + " art_id:" + requestParameter.getRequestForecastParameter().getArtId());
 		try {
-			responceForecast = this.makeForecast(requestParameter.getRequestForecastParameter(), whsArtTimeline);
+			responseForecast = this.makeForecast(requestParameter.getRequestForecastParameter(), whsArtTimeline);
 		} catch (Exception e) {
-			responceForecast = new ResponceForecast(requestParameter.getRequestForecastParameter().getWhsId(), requestParameter.getRequestForecastParameter().getArtId());
-			responceForecast.setErrorMessage("Can't make forecast:" + e.toString());
+			responseForecast = new ResponseForecast(requestParameter.getRequestForecastParameter().getWhsId(), requestParameter.getRequestForecastParameter().getArtId());
+			responseForecast.setErrorMessage("Can't make forecast:" + e.toString());
 			LOG.error("Can't make forecast:" + e.toString());
 		}
 
 		try {
-			responceElasticity = this.makeElasticity(requestParameter.getRequestElasticityParameter(), whsArtTimeline, false);
+			responseElasticity = this.makeElasticity(requestParameter.getRequestElasticityParameter(), whsArtTimeline, false);
 		} catch (Exception e) {
-			responceElasticity = new ResponceElasticity(requestParameter.getRequestElasticityParameter().getWhsId(), requestParameter.getRequestElasticityParameter().getArtId());
-			responceElasticity.setErrorMessage("Can't calculate elasticity:" + e.toString());
+			responseElasticity = new ResponseElasticity(requestParameter.getRequestElasticityParameter().getWhsId(), requestParameter.getRequestElasticityParameter().getArtId());
+			responseElasticity.setErrorMessage("Can't calculate elasticity:" + e.toString());
 			LOG.error("Can't calculate elasticity:" + e.toString());
 		}
-		ResponceForecastAndElasticity result = new ResponceForecastAndElasticity(responceForecast, responceElasticity);
+		ResponseForecastAndElasticity result = new ResponseForecastAndElasticity(responseForecast, responseElasticity);
 		return result;
 	}
 }

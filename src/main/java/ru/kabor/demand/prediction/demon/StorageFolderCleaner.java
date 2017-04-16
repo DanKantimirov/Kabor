@@ -30,7 +30,7 @@ public class StorageFolderCleaner {
 		if(shouldMakeCleaning){
 			LOG.info("StorageFolderCleaner: started");
     		Long dayInMs = 1000 * 60 * 60 * 24L;
-    		Date date = new Date(System.currentTimeMillis() - (3 * dayInMs));
+    		Date date = new Date(System.currentTimeMillis() - (2 * dayInMs));
     		List<String> attachmentPath = dataService.getAttachmentPathListByResponseTimeBeforeMoment(date);
     		for (String fileName : attachmentPath) {
     			dataService.deleteFileFromOutputStorage(fileName);

@@ -2,8 +2,10 @@ package ru.kabor.demand.prediction.entity;
 
 /** That class describes difference between sales in two time moments with different prices. */
 public class SalesAndPriceDeviation {
-	Double priceDeviatin;			//new_price - old_price (not module)
-	Double salesDeviation;			//new_sales - old_sales (not module)
+	/** new_price - old_price (not module) */
+	Double priceDeviatin;
+	/** new_sales - old_sales (not module)*/
+	Double salesDeviation;
 
 	public SalesAndPriceDeviation(Double priceDeviatin, Double salesDeviation) {
 		super();

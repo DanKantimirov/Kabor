@@ -41,18 +41,20 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterSingle;
+import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterSingle;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
-import ru.kabor.demand.prediction.entity.ResponceForecast;
-import ru.kabor.demand.prediction.entity.ResponceForecastAndElasticity;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
+import ru.kabor.demand.prediction.entity.ResponseForecast;
+import ru.kabor.demand.prediction.entity.ResponseForecastAndElasticity;
 import ru.kabor.demand.prediction.entity.TimeMomentDescription;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 import ru.kabor.demand.prediction.r.RUtils;
 import ru.kabor.demand.prediction.service.DataServiceException;
 import ru.kabor.demand.prediction.utils.FORECAST_METHOD;
 import ru.kabor.demand.prediction.utils.MultithreadingElasticityCallable;
+import ru.kabor.demand.prediction.utils.MultithreadingForecastAndElasticityCallable;
 import ru.kabor.demand.prediction.utils.MultithreadingForecastCallable;
 import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 import ru.kabor.demand.prediction.utils.WhsArtTimelineBuilder;
@@ -235,11 +237,11 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 	
 	@Override
-	public List<ResponceForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
-		List<ResponceForecast> result = new ArrayList<>();
+	public List<ResponseForecast> getForecastMultiple(RequestForecastParameterMultiple forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
+		List<ResponseForecast> result = new ArrayList<>();
 		List<WhsArtTimeline> whsArtTimelineList = WhsArtTimelineBuilder.buildWhsArtTimelineListWithPrices(salesRowSet);
 		ExecutorService executorService = Executors.newFixedThreadPool(this.countThreads);
-		List<Future<ResponceForecast>> resultList = new ArrayList<Future<ResponceForecast>>();
+		List<Future<ResponseForecast>> resultList = new ArrayList<Future<ResponseForecast>>();
 		
 		for (int i = 0; i < whsArtTimelineList.size(); i++) {
 			RequestForecastParameterSingle forecastParameter = new RequestForecastParameterSingle(
@@ -252,7 +254,7 @@ public class DataRepositoryImpl implements DataRepository{
 					forecastParameters.getForecastMethod(), 
 					forecastParameters.getSmoothType());
 			MultithreadingForecastCallable forecastCallable = new MultithreadingForecastCallable(forecastParameter, whsArtTimelineList.get(i),this.rUtils);
-			Future<ResponceForecast> future = executorService.submit(forecastCallable);
+			Future<ResponseForecast> future = executorService.submit(forecastCallable);
 			resultList.add(future);
 		}
 		executorService.shutdown();
@@ -267,11 +269,11 @@ public class DataRepositoryImpl implements DataRepository{
 			}
 		}
 		
-		for(Future<ResponceForecast> future: resultList){
-			ResponceForecast responce;
+		for(Future<ResponseForecast> future: resultList){
+			ResponseForecast response;
 			try {
-				responce = future.get();
-				result.add(responce);
+				response = future.get();
+				result.add(response);
 			} catch (InterruptedException | ExecutionException e) {
 				LOG.error("Getting forecast result exception: " + e.toString());
 			}
@@ -280,16 +282,16 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 	
 	@Override
-	public List<ResponceElasticity> getElasticityMultiple(RequestElasticityParameterMultiple elasticityParameterMultiple, SqlRowSet salesRowSet) throws DataServiceException {
-		List<ResponceElasticity> result = new ArrayList<>();
+	public List<ResponseElasticity> getElasticityMultiple(RequestElasticityParameterMultiple elasticityParameterMultiple, SqlRowSet salesRowSet) throws DataServiceException {
+		List<ResponseElasticity> result = new ArrayList<>();
 		List<WhsArtTimeline> whsArtTimelineList = WhsArtTimelineBuilder.buildWhsArtTimelineListWithPrices(salesRowSet);
 		ExecutorService executorService = Executors.newFixedThreadPool(this.countThreads);
-		List<Future<ResponceElasticity>> resultList = new ArrayList<Future<ResponceElasticity>>();
+		List<Future<ResponseElasticity>> resultList = new ArrayList<Future<ResponseElasticity>>();
 		
 		for (int i = 0; i < whsArtTimelineList.size(); i++) {
 			RequestElasticityParameterSingle elasticityParameter = new RequestElasticityParameterSingle(elasticityParameterMultiple.getRequestId(), whsArtTimelineList.get(i).getWhsId(), whsArtTimelineList.get(i).getArtId());
 			MultithreadingElasticityCallable forecastCallable = new MultithreadingElasticityCallable(elasticityParameter, whsArtTimelineList.get(i),this.rUtils);
-			Future<ResponceElasticity> future = executorService.submit(forecastCallable);
+			Future<ResponseElasticity> future = executorService.submit(forecastCallable);
 			resultList.add(future);
 		}
 		executorService.shutdown();
@@ -304,11 +306,11 @@ public class DataRepositoryImpl implements DataRepository{
 			}
 		}
 		
-		for(Future<ResponceElasticity> future: resultList){
-			ResponceElasticity responce;
+		for(Future<ResponseElasticity> future: resultList){
+			ResponseElasticity response;
 			try {
-				responce = future.get();
-				result.add(responce);
+				response = future.get();
+				result.add(response);
 			} catch (InterruptedException | ExecutionException e) {
 				LOG.error("Getting elasticity result exception: " + e.toString());
 			}
@@ -317,8 +319,62 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 	
 	@Override
-	public ResponceForecast getForecast(RequestForecastParameterSingle forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
-		ResponceForecast result = new ResponceForecast();
+	public List<ResponseForecastAndElasticity> getForecastAndElasticityMultiple(RequestForecastAndElasticityParameterMultiple forecastAndElasticityParameterMultiple,
+			SqlRowSet salesRowSet) throws DataServiceException {
+		List<ResponseForecastAndElasticity> result = new ArrayList<>();
+		List<WhsArtTimeline> whsArtTimelineList = WhsArtTimelineBuilder.buildWhsArtTimelineListWithPrices(salesRowSet);
+		ExecutorService executorService = Executors.newFixedThreadPool(this.countThreads);
+		List<Future<ResponseForecastAndElasticity>> resultList = new ArrayList<Future<ResponseForecastAndElasticity>>();
+		
+		for (int i = 0; i < whsArtTimelineList.size(); i++) {
+
+			RequestForecastParameterSingle forecastParameter = new RequestForecastParameterSingle(
+					forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getRequestId(),
+					whsArtTimelineList.get(i).getWhsId(), 
+					whsArtTimelineList.get(i).getArtId(), 
+					forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getTrainingStart(), 
+					forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getTrainingEnd(), 
+					forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getForecastDuration(), 
+					forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getForecastMethod(), 
+					forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getSmoothType());
+			
+			RequestElasticityParameterSingle elasticityParameter = new RequestElasticityParameterSingle(forecastAndElasticityParameterMultiple.getRequestElasticityParameterMultiple().getRequestId(), whsArtTimelineList.get(i).getWhsId(), whsArtTimelineList.get(i).getArtId());
+			
+			RequestForecastAndElasticityParameterSingle forecastAndElasticityParameter = new RequestForecastAndElasticityParameterSingle();
+			forecastAndElasticityParameter.setRequestForecastParameter(forecastParameter);
+			forecastAndElasticityParameter.setRequestElasticityParameter(elasticityParameter);
+			
+			MultithreadingForecastAndElasticityCallable forecastAndElasticityCallable = new MultithreadingForecastAndElasticityCallable(forecastAndElasticityParameter, whsArtTimelineList.get(i),this.rUtils);
+			Future<ResponseForecastAndElasticity> future = executorService.submit(forecastAndElasticityCallable);
+			resultList.add(future);
+		}
+		executorService.shutdown();
+		
+		try {
+			executorService.awaitTermination(maxAvaitTermination, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			throw new DataServiceException("R is not answerring too long");
+		} finally{
+			if(!executorService.isShutdown()){
+				executorService.shutdownNow();
+			}
+		}
+		
+		for(Future<ResponseForecastAndElasticity> future: resultList){
+			ResponseForecastAndElasticity response;
+			try {
+				response = future.get();
+				result.add(response);
+			} catch (InterruptedException | ExecutionException e) {
+				LOG.error("Getting elasticity result exception: " + e.toString());
+			}
+		}
+		return result;
+	}
+	
+	@Override
+	public ResponseForecast getForecast(RequestForecastParameterSingle forecastParameters, SqlRowSet salesRowSet) throws DataServiceException {
+		ResponseForecast result = new ResponseForecast();
 		WhsArtTimeline whsArtTimeline = WhsArtTimelineBuilder.buildWhsArtTimelineWithPrices(salesRowSet);
 		if(whsArtTimeline.getTimeMoments().size()==0){
 			throw new DataServiceException("Can't find sales for that request");
@@ -335,22 +391,22 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 
 	@Override
-	public String createForecastResultFile(ResponceForecast responceForecast) throws DataServiceException {
-		List<ResponceForecast> responceForecastList = new ArrayList<>();
-		responceForecastList.add(responceForecast);
-		return this.createForecastMultipleResultFile(responceForecastList);
+	public String createForecastResultFile(ResponseForecast responseForecast) throws DataServiceException {
+		List<ResponseForecast> responseForecastList = new ArrayList<>();
+		responseForecastList.add(responseForecast);
+		return this.createForecastMultipleResultFile(responseForecastList);
 	}
 	
 	@Override
-	public String createForecastMultipleResultFile(List<ResponceForecast> responceForecastList) throws DataServiceException {
+	public String createForecastMultipleResultFile(List<ResponseForecast> responseForecastList) throws DataServiceException {
 		FileOutputStream out = null;
 		Workbook book = null;
 		String fullFilePath = "";
 		String fileName = "";
 		try {
 			book = new SXSSFWorkbook(1000);
-			this.createForecastSheetWithSummary(book, responceForecastList);
-			this.createForecastSheetWithPrediction(book, responceForecastList);
+			this.createForecastSheetWithSummary(book, responseForecastList);
+			this.createForecastSheetWithPrediction(book, responseForecastList);
 			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xlsx";
 			fullFilePath = outputFolderLocation + fileSeparator + fileName;
 			out = new FileOutputStream(new File(fullFilePath), false);
@@ -377,7 +433,7 @@ public class DataRepositoryImpl implements DataRepository{
 		return fileName;
 	}
 	
-	public void createForecastSheetWithPrediction(Workbook book, List<ResponceForecast> responceForecastList) {
+	public void createForecastSheetWithPrediction(Workbook book, List<ResponseForecast> responseForecastList) {
 		Integer rowPredictionSheetNumber = 0;
 		Sheet sheetPrediction = book.createSheet("Prediction");
 		Row row = sheetPrediction.createRow(0);
@@ -401,26 +457,26 @@ public class DataRepositoryImpl implements DataRepository{
 		cell = row.createCell(8);
 		cell.setCellValue("isPrediction");
 
-		Integer predictionRowCount = responceForecastList.stream().mapToInt(e -> e.getTimeMomentsPrediction().size()).sum();
+		Integer predictionRowCount = responseForecastList.stream().mapToInt(e -> e.getTimeMomentsPrediction().size()).sum();
 		if (predictionRowCount > 500000) {
 			predictionRowCount = 500000;
 		}
 
-		Integer maxPredictionPerForecast = predictionRowCount / responceForecastList.size();
-		Integer maxActualRowPeResponseForecast = (900000 - maxPredictionPerForecast) / responceForecastList.size();
-		for (int k = 0; k < responceForecastList.size(); k++) {
+		Integer maxPredictionPerForecast = predictionRowCount / responseForecastList.size();
+		Integer maxActualRowPeResponseForecast = (900000 - maxPredictionPerForecast) / responseForecastList.size();
+		for (int k = 0; k < responseForecastList.size(); k++) {
 
-			ResponceForecast responceForecast = responceForecastList.get(k);
+			ResponseForecast responseForecast = responseForecastList.get(k);
 
 			Integer printedActual = 0;
-			Integer startI = responceForecast.getTimeMomentsActual().size() - maxActualRowPeResponseForecast;
+			Integer startI = responseForecast.getTimeMomentsActual().size() - maxActualRowPeResponseForecast;
 			if (startI < 0) {
 				startI = 0;
 			}
-			for (int i = startI; i < responceForecast.getTimeMomentsActual().size(); i++) {
+			for (int i = startI; i < responseForecast.getTimeMomentsActual().size(); i++) {
 				rowPredictionSheetNumber++;
 
-				TimeMomentDescription timeMoment = responceForecast.getTimeMomentsActual().get(i);
+				TimeMomentDescription timeMoment = responseForecast.getTimeMomentsActual().get(i);
 				String dayId = timeMoment.getTimeMoment().toString();
 				Double sales = timeMoment.getSales().getActualValue();
 				Double salesSmooth = timeMoment.getSales().getSmoothedValue();
@@ -431,10 +487,10 @@ public class DataRepositoryImpl implements DataRepository{
 				row = sheetPrediction.createRow(rowPredictionSheetNumber);
 
 				cell = row.createCell(0);
-				cell.setCellValue(responceForecast.getWhsId());
+				cell.setCellValue(responseForecast.getWhsId());
 
 				cell = row.createCell(1);
-				cell.setCellValue(responceForecast.getArtId());
+				cell.setCellValue(responseForecast.getArtId());
 
 				cell = row.createCell(2);
 				cell.setCellValue(dayId);
@@ -476,20 +532,20 @@ public class DataRepositoryImpl implements DataRepository{
 			}
 
 			Integer printedForecast = 0;
-			for (int i = 0; i < responceForecast.getTimeMomentsPrediction().size(); i++) {
+			for (int i = 0; i < responseForecast.getTimeMomentsPrediction().size(); i++) {
 				if (printedForecast > maxPredictionPerForecast) {
 					break;
 				}
 				rowPredictionSheetNumber++;
 				row = sheetPrediction.createRow(rowPredictionSheetNumber);
 				cell = row.createCell(0);
-				cell.setCellValue(responceForecast.getWhsId());
+				cell.setCellValue(responseForecast.getWhsId());
 				cell = row.createCell(1);
-				cell.setCellValue(responceForecast.getArtId());
+				cell.setCellValue(responseForecast.getArtId());
 				cell = row.createCell(2);
-				cell.setCellValue(responceForecast.getTimeMomentsPrediction().get(i).getTimeMoment().toString());
+				cell.setCellValue(responseForecast.getTimeMomentsPrediction().get(i).getTimeMoment().toString());
 				cell = row.createCell(3);
-				Double saleQnty = responceForecast.getTimeMomentsPrediction().get(i).getSales().getActualValue();
+				Double saleQnty = responseForecast.getTimeMomentsPrediction().get(i).getSales().getActualValue();
 
 				if (saleQnty == null || saleQnty.equals(0)) {
 					cell.setCellValue(0);
@@ -506,7 +562,7 @@ public class DataRepositoryImpl implements DataRepository{
 		}
 	}
 
-	public void createForecastSheetWithSummary(Workbook book, List<ResponceForecast> responceForecastList) {
+	public void createForecastSheetWithSummary(Workbook book, List<ResponseForecast> responseForecastList) {
 		Integer rowSummarySheetNumber = 0;
 		Sheet sheetSummary = book.createSheet("Forecast summary");
 		Row row = sheetSummary.createRow(0);
@@ -520,25 +576,25 @@ public class DataRepositoryImpl implements DataRepository{
 		cell = row.createCell(3);
 		cell.setCellValue("info");
 
-		for (int k = 0; k < responceForecastList.size(); k++) {
+		for (int k = 0; k < responseForecastList.size(); k++) {
 			rowSummarySheetNumber++;
-			ResponceForecast responceForecast = responceForecastList.get(k);
-			Boolean hasError = responceForecast.getHasError();
+			ResponseForecast responseForecast = responseForecastList.get(k);
+			Boolean hasError = responseForecast.getHasError();
 			String status = "";
 			String info = "";
 
 			if (hasError) {
 				status = "error";
-				info = responceForecast.getErrorMessage();
+				info = responseForecast.getErrorMessage();
 			} else {
 				status = "success";
 			}
 
 			row = sheetSummary.createRow(rowSummarySheetNumber);
 			cell = row.createCell(0);
-			cell.setCellValue(responceForecast.getWhsId());
+			cell.setCellValue(responseForecast.getWhsId());
 			cell = row.createCell(1);
-			cell.setCellValue(responceForecast.getArtId());
+			cell.setCellValue(responseForecast.getArtId());
 			cell = row.createCell(2);
 			cell.setCellValue(status);
 			cell = row.createCell(3);
@@ -752,8 +808,8 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 
 	@Override
-	public ResponceElasticity getElasticity(RequestElasticityParameterSingle elasticityParameter, SqlRowSet salesRowSet) throws DataServiceException {
-		ResponceElasticity result = new ResponceElasticity();
+	public ResponseElasticity getElasticity(RequestElasticityParameterSingle elasticityParameter, SqlRowSet salesRowSet) throws DataServiceException {
+		ResponseElasticity result = new ResponseElasticity();
 		WhsArtTimeline whsArtTimeline = WhsArtTimelineBuilder.buildWhsArtTimelineWithPrices(salesRowSet);
 		if(whsArtTimeline.getTimeMoments().size()==0){
 			throw new DataServiceException("Can't find sales for that request");
@@ -770,7 +826,7 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 
 	@Override
-	public String createElasticityMultipleResultFile(List<ResponceElasticity> elasticityResponseList) throws DataServiceException {
+	public String createElasticityMultipleResultFile(List<ResponseElasticity> elasticityResponseList) throws DataServiceException {
 		FileOutputStream out = null;
 		Workbook book = null;
 		String fullFilePath = "";
@@ -804,7 +860,7 @@ public class DataRepositoryImpl implements DataRepository{
 		return fileName;
 	}
 	
-	public void createElasticitySheetWithFormulas(Workbook book, List<ResponceElasticity> elasticityResponseList) {
+	public void createElasticitySheetWithFormulas(Workbook book, List<ResponseElasticity> elasticityResponseList) {
 		Integer rowSummarySheetNumber = 0;
 		Sheet sheetSummary = book.createSheet("Elasticity Summary");
 		Row row = sheetSummary.createRow(0);
@@ -824,15 +880,15 @@ public class DataRepositoryImpl implements DataRepository{
 
 		for (int k = 0; k < elasticityResponseList.size(); k++) {
 			rowSummarySheetNumber++;
-			ResponceElasticity responceElasticity = elasticityResponseList.get(k);
-			Boolean hasError = responceElasticity.getHasError();
+			ResponseElasticity responseElasticity = elasticityResponseList.get(k);
+			Boolean hasError = responseElasticity.getHasError();
 			String status = "";
 			String info = "";
 
 			if (hasError) {
 				status = "error";
-				info = responceElasticity.getErrorMessage();
-			} else if (responceElasticity.getFormula() == null) {
+				info = responseElasticity.getErrorMessage();
+			} else if (responseElasticity.getFormula() == null) {
 				status = "error";
 				info = "too little data";
 			} else {
@@ -841,26 +897,26 @@ public class DataRepositoryImpl implements DataRepository{
 
 			row = sheetSummary.createRow(rowSummarySheetNumber);
 			cell = row.createCell(0);
-			cell.setCellValue(responceElasticity.getWhsId());
+			cell.setCellValue(responseElasticity.getWhsId());
 			cell = row.createCell(1);
-			cell.setCellValue(responceElasticity.getArtId());
+			cell.setCellValue(responseElasticity.getArtId());
 			cell = row.createCell(2);
 			cell.setCellValue(status);
 			cell = row.createCell(3);
 			cell.setCellValue(info);
 			cell = row.createCell(4);
-			if (responceElasticity.getFormula() != null) {
-				cell.setCellValue(responceElasticity.getPrettyFormula());
+			if (responseElasticity.getFormula() != null) {
+				cell.setCellValue(responseElasticity.getPrettyFormula());
 			}
 			cell = row.createCell(5);
-			if (responceElasticity.getSigma() != null) {
-				cell.setCellValue(responceElasticity.getSigma());
+			if (responseElasticity.getSigma() != null) {
+				cell.setCellValue(responseElasticity.getSigma());
 			}
 		}
 		return;
 	}
 	
-	public void createElasticitySheetWithDatas(Workbook book, List<ResponceElasticity> elasticityResponseList){
+	public void createElasticitySheetWithDatas(Workbook book, List<ResponseElasticity> elasticityResponseList){
 		Integer rowDataSheetNumber = 0;
 		Sheet sheetData = book.createSheet("Data");
 		Cell cell;
@@ -880,8 +936,8 @@ public class DataRepositoryImpl implements DataRepository{
 		cell = row.createCell(6);
 		cell.setCellValue("remainder sales_qnty");
 		for (int k = 0; k < elasticityResponseList.size(); k++) {
-			ResponceElasticity responceElasticity = elasticityResponseList.get(k);
-			List<TimeMomentDescription> timeMomentList = responceElasticity.getTimeMoments();
+			ResponseElasticity responseElasticity = elasticityResponseList.get(k);
+			List<TimeMomentDescription> timeMomentList = responseElasticity.getTimeMoments();
 			if(timeMomentList!=null && timeMomentList.size()>0){
 				for (int i = 0; i < timeMomentList.size(); i++) {
 					rowDataSheetNumber++;
@@ -896,10 +952,10 @@ public class DataRepositoryImpl implements DataRepository{
 					row = sheetData.createRow(rowDataSheetNumber);
 					
 					cell = row.createCell(0);
-					cell.setCellValue(responceElasticity.getWhsId());
+					cell.setCellValue(responseElasticity.getWhsId());
 					
 					cell = row.createCell(1);
-					cell.setCellValue(responceElasticity.getArtId());
+					cell.setCellValue(responseElasticity.getArtId());
 					
 					cell = row.createCell(2);
 					cell.setCellValue(dayId);
@@ -934,10 +990,10 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 
 	@Override
-	public ResponceForecastAndElasticity getForecastAndElasticity(RequestForecastAndElasticityParameterSingle requestParameter, SqlRowSet salesRowSet) throws DataServiceException {
-		ResponceForecast responceForecast = new ResponceForecast();
-		ResponceElasticity responceElasticity = new ResponceElasticity();
-		ResponceForecastAndElasticity result = new ResponceForecastAndElasticity(responceForecast,responceElasticity);
+	public ResponseForecastAndElasticity getForecastAndElasticity(RequestForecastAndElasticityParameterSingle requestParameter, SqlRowSet salesRowSet) throws DataServiceException {
+		ResponseForecast responseForecast = new ResponseForecast();
+		ResponseElasticity responseElasticity = new ResponseElasticity();
+		ResponseForecastAndElasticity result = new ResponseForecastAndElasticity(responseForecast,responseElasticity);
 		
 		WhsArtTimeline whsArtTimeline = WhsArtTimelineBuilder.buildWhsArtTimelineWithPrices(salesRowSet);
 		if(whsArtTimeline.getTimeMoments().size()==0){
@@ -985,7 +1041,7 @@ public class DataRepositoryImpl implements DataRepository{
 	}
 
 	@Override
-	public String createForecastWithElasticityMultipleResultFile(List<ResponceForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
+	public String createForecastWithElasticityMultipleResultFile(List<ResponseForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
 		FileOutputStream out = null;
 		Workbook book = null;
 		String fullFilePath = "";
@@ -993,11 +1049,11 @@ public class DataRepositoryImpl implements DataRepository{
 		
 		try {
 			book = new SXSSFWorkbook(1000);
-			List<ResponceForecast> responceForecastList = forecastAndElasticityResponseList.stream().map(e->e.getResponceForecast()).collect(Collectors.toList());
-			List<ResponceElasticity> responceElasticityList = forecastAndElasticityResponseList.stream().map(e->e.getResponceElasticity()).collect(Collectors.toList());
-			this.createForecastSheetWithSummary(book, responceForecastList);
-			this.createForecastSheetWithPrediction(book, responceForecastList);
-			this.createElasticitySheetWithFormulas(book, responceElasticityList);
+			List<ResponseForecast> responseForecastList = forecastAndElasticityResponseList.stream().map(e->e.getResponseForecast()).collect(Collectors.toList());
+			List<ResponseElasticity> responseElasticityList = forecastAndElasticityResponseList.stream().map(e->e.getResponseElasticity()).collect(Collectors.toList());
+			this.createForecastSheetWithSummary(book, responseForecastList);
+			this.createForecastSheetWithPrediction(book, responseForecastList);
+			this.createElasticitySheetWithFormulas(book, responseElasticityList);
 			fileName = RandomStringUtils.randomAlphanumeric(32) + ".xlsx";;
 			fullFilePath = outputFolderLocation + fileSeparator + fileName;
 			out = new FileOutputStream(new File(fullFilePath),false);
@@ -1022,4 +1078,5 @@ public class DataRepositoryImpl implements DataRepository{
 		}
 		return fileName;
 	}
+	
 }

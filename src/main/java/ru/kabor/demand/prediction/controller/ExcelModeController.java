@@ -19,59 +19,83 @@ import ru.kabor.demand.prediction.utils.SMOOTH_TYPE;
 /** Controller for working when we take data(sales,rest) from Excel document*/
 public interface ExcelModeController {
 	
-	/** Return list of already downloaded files and redirect to form of adding new
+	/** Return list of already downloaded files (attribute files) and redirect to form of making forecast
+	 * @param model model from Spring framework
+	 * @return	redirect to page of making forecast
 	 * @throws IOException
-	 * @throws DataServiceException*/
+	 * @throws DataServiceException
+	 */
 	String listUploadedFiles(Model model) throws IOException, DataServiceException;
 	
-	/** Return file by path
+
+	/** Return file by name from input storage
 	 * @param filename name of file
-	 * @throws DataServiceException*/
+	 * @return http response with file
+	 * @throws DataServiceException
+	 */
 	ResponseEntity<Resource> serveFile(String filename) throws DataServiceException;
+	
+    /** Return file by name from output storage
+     * @param filename name of file
+     * @return http response with file
+     * @throws DataServiceException
+     */
+    ResponseEntity<Resource> serveFileOutput(@PathVariable String filename) throws DataServiceException;
+
 
 	/** Send file to server and start making forecasting
-	 * @param file Excel file with sales and rests
-	 * @param defaultSettingsInput If it is not null or 0: 7 days, WINTER_HOLT, none smoothing
-	 * @param forecastDuration Duration of forecast
-	 * @param forecastMethod Method of forecasting
-	 * @param smoothType Method of smoothing raw data
-	 * @param email User's email
-	 * @param gRecaptchaResponse Response from captcha
+	 * @param file file Excel file with sales and rests
+	 * @param elasticityTypeInput should calculate elasticity
+	 * @param defaultSettingsInput  if it is not null or 0: 7 days, WINTER_HOLT, none smoothing
+	 * @param forecastDuration duration of the forecast
+	 * @param forecastMethod method of forecasting
+	 * @param smoothType method of smoothing raw data
+	 * @param gRecaptchaResponse response from captcha
+	 * @param email user's email
+	 * @param request request http request from client
+	 * @param redirectAttributes attributes of redirect 
+	 * @return redirect to page of making forecast
 	 * @throws DataServiceException
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException */
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
 	String handleFileUpload(MultipartFile file, String elasticityTypeInput, String defaultSettingsInput,
 		   Integer forecastDuration, FORECAST_METHOD forecastMethod, SMOOTH_TYPE smoothType, String gRecaptchaResponse,
 		   String email, HttpServletRequest request, RedirectAttributes redirectAttributes)
 					throws DataServiceException, UnsupportedEncodingException, IOException;
 	
-	/** Return uploadFormForecast.html */
+	/** Return uploadFormForecast.html
+	 * @param model model from Spring framework
+	 * @return redirect to uploadFormForecast.html
+	 */
 	String getUploadFormForecast(Model model);
 	
-	/** Return uploadElasticity.html */
+	/** Return uploadElasticity.html
+	 * @param model model from Spring framework
+	 * @return redirect to uploadElasticity.html
+	 */
 	String getUploadElasticity(Model model);
-	
-	/** Send file to server and start calculating elasticity
-	 * @param file Excel file with sales and rests
-	 * @param email User's email
-	 * @param gRecaptchaResponse Response from captcha
-	 * @throws DataServiceException
-	 * @throws IOException 
-	 * @throws UnsupportedEncodingException */
+		
+    /** Send file to server and start calculating elasticity
+     * @param file excel file with sales, rests and prices
+     * @param email user's email
+     * @param gRecaptchaResponse response from captcha
+     * @param request http request from client
+     * @param redirectAttributes attributes of redirect 
+     * @return redirect to page of calculating elasticity
+     * @throws DataServiceException
+     * @throws UnsupportedEncodingException
+     * @throws IOException
+     */
     String handleFileUploadElasticity(MultipartFile file, String email, String gRecaptchaResponse,
 			HttpServletRequest request,	RedirectAttributes redirectAttributes) throws DataServiceException, UnsupportedEncodingException, IOException;
-   
-    /** Return file by path from output storage
-	 * @throws DataServiceException*/
-    ResponseEntity<Resource> serveFileOutput(@PathVariable String filename) throws DataServiceException;
     
-    /**
-	 * Send user comment to our email
-	 * @param firstname	firstname
-	 * @param lastname	lastname
-	 * @param email	email
-	 * @param comments	comment
-	 * @return
-	 */
+    /**  Send user's comment to service's email address
+     * @param firstname firstname
+     * @param lastname lastname
+     * @param email email
+     * @param comments comment
+     * @return redirect to contactUs page
+     */
     String sendContactEmail(String firstname, String lastname, String email, String comments);
 }

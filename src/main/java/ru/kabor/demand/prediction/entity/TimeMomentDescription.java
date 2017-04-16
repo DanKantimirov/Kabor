@@ -6,8 +6,10 @@ import java.time.LocalDate;
 public class TimeMomentDescription {
 
 	private LocalDate timeMoment;
-	private TimeSeriesElement sales;	//sales with trand, seasonality and random
-	private TimeSeriesElement rest;		//rests with trand, seasonality and random
+	/** sales with trand, seasonality and random */
+	private TimeSeriesElement sales;
+	/** rests with trand, seasonality and random*/
+	private TimeSeriesElement rest;
 	private Double priceQnty = 0.0;
 
 	public TimeMomentDescription() {

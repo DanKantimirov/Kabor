@@ -31,9 +31,9 @@ import com.monitorjbl.xlsx.StreamingReader;
 import ru.kabor.demand.prediction.entity.ElasticityParameter;
 import ru.kabor.demand.prediction.entity.ForecastParameter;
 import ru.kabor.demand.prediction.entity.Request;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
-import ru.kabor.demand.prediction.entity.ResponceForecast;
-import ru.kabor.demand.prediction.entity.ResponceForecastAndElasticity;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
+import ru.kabor.demand.prediction.entity.ResponseForecast;
+import ru.kabor.demand.prediction.entity.ResponseForecastAndElasticity;
 import ru.kabor.demand.prediction.entity.SalesRest;
 import ru.kabor.demand.prediction.repository.ElasticityParameterRepository;
 import ru.kabor.demand.prediction.repository.ForecastParameterRepository;
@@ -303,7 +303,7 @@ public class RequestServiceImpl implements RequestService {
 		request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_FORECASTING);
 		requestRepository.saveAndFlush(request);
 
-		List<ResponceForecast> forecastResponseList = null;
+		List<ResponseForecast> forecastResponseList = null;
 		String filePath = null;
 		
 		try {
@@ -341,7 +341,7 @@ public class RequestServiceImpl implements RequestService {
 		request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_CALCULATING_ELASTICITY);
 		requestRepository.saveAndFlush(request);
 
-		List<ResponceElasticity> elasticityResponseList = null;
+		List<ResponseElasticity> elasticityResponseList = null;
 		String filePath = null;
 		
 		try {
@@ -379,7 +379,7 @@ public class RequestServiceImpl implements RequestService {
 		request.setStatus(ConstantUtils.REQUEST_HOLDED_BY_FORECASTING_AND_ELASTICITY);
 		requestRepository.saveAndFlush(request);
 
-		List<ResponceForecastAndElasticity> forecastAndElasticityResponseList = null;
+		List<ResponseForecastAndElasticity> forecastAndElasticityResponseList = null;
 		String filePath = null;
 		
 		try {

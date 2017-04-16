@@ -33,12 +33,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterSingle;
+import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterSingle;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
-import ru.kabor.demand.prediction.entity.ResponceForecast;
-import ru.kabor.demand.prediction.entity.ResponceForecastAndElasticity;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
+import ru.kabor.demand.prediction.entity.ResponseForecast;
+import ru.kabor.demand.prediction.entity.ResponseForecastAndElasticity;
 import ru.kabor.demand.prediction.repository.DataRepository;
 
 /** Implementation for DataService */
@@ -67,7 +68,7 @@ public class DataServiceImpl implements DataService {
 	}
 	
 	@Override
-	public List<ResponceElasticity> getElasticityMultipleDatabaseMode(RequestElasticityParameterMultiple elasticityParameterMultiple) throws DataServiceException {
+	public List<ResponseElasticity> getElasticityMultipleDatabaseMode(RequestElasticityParameterMultiple elasticityParameterMultiple) throws DataServiceException {
 		String whsIdBulk = elasticityParameterMultiple.getWhsIdBulk();
 		String artIdBulk = elasticityParameterMultiple.getArtIdBulk();
 		
@@ -96,7 +97,7 @@ public class DataServiceImpl implements DataService {
 			throw new DataServiceException("only (0-9 or ;) are allowed for art_id");
 		}
 		
-		List<ResponceElasticity> elasticityList = null;
+		List<ResponseElasticity> elasticityList = null;
 		try {
 			SqlRowSet salesRowSet = dataRepository.getSalesMultipleWithPrices(elasticityParameterMultiple);
 			elasticityList = dataRepository.getElasticityMultiple(elasticityParameterMultiple, salesRowSet);
@@ -107,7 +108,7 @@ public class DataServiceImpl implements DataService {
 	}
 	
 	@Override
-	public List<ResponceForecast> getForecastMultipleDatabaseMode(RequestForecastParameterMultiple forecastParameters) throws DataServiceException {
+	public List<ResponseForecast> getForecastMultipleDatabaseMode(RequestForecastParameterMultiple forecastParameters) throws DataServiceException {
 		String whsIdBulk = forecastParameters.getWhsIdBulk();
 		String artIdBulk = forecastParameters.getArtIdBulk();
 		String trainingStart = forecastParameters.getTrainingStart();
@@ -154,7 +155,7 @@ public class DataServiceImpl implements DataService {
 			throw new DataServiceException("start of forecasting is before start of training");
 		}
 		
-		List<ResponceForecast> forecastList = null;
+		List<ResponseForecast> forecastList = null;
 		try {
 			SqlRowSet salesRowSet = dataRepository.getSalesMultipleWithPrices(forecastParameters);
 			forecastList = dataRepository.getForecastMultiple(forecastParameters, salesRowSet);
@@ -165,15 +166,15 @@ public class DataServiceImpl implements DataService {
 	}
 	
 	@Override
-	public List<ResponceElasticity> getElasticitytExcelMode(Integer requestId) throws DataServiceException {
-		List<ResponceElasticity> responceList = new ArrayList<>();
+	public List<ResponseElasticity> getElasticitytExcelMode(Integer requestId) throws DataServiceException {
+		List<ResponseElasticity> responseList = new ArrayList<>();
 		List<RequestElasticityParameterSingle> requestElasticityParameterSingleList = dataRepository.getRequestElasticityParameterSingleList(requestId);
 		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
-		List<Future<ResponceElasticity>> futureResponsetList = new ArrayList<Future<ResponceElasticity>>();
+		List<Future<ResponseElasticity>> futureResponsetList = new ArrayList<Future<ResponseElasticity>>();
 		
 		for (int i = 0; i < requestElasticityParameterSingleList.size(); i++) {
 			RequestElasticityParameterSingle elasticityParameter = requestElasticityParameterSingleList.get(i);
-			Future<ResponceElasticity> futureResponse = executorService.submit(() -> {
+			Future<ResponseElasticity> futureResponse = executorService.submit(() -> {
 				return this.getElasticitySingleDatabaseMode(elasticityParameter);
 			});
 			futureResponsetList.add(futureResponse);
@@ -191,13 +192,13 @@ public class DataServiceImpl implements DataService {
 		}
 		
 		//Getting results from tasks
-		for (Future<ResponceElasticity> futureResponse : futureResponsetList) {
-			ResponceElasticity responce;
+		for (Future<ResponseElasticity> futureResponse : futureResponsetList) {
+			ResponseElasticity response;
 			try {
-				responce = futureResponse.get();
-				responceList.add(responce);
+				response = futureResponse.get();
+				responseList.add(response);
 				//Mark that request as completed
-				requestElasticityParameterSingleList.removeIf(e->e.getArtId().equals(responce.getArtId()) && e.getWhsId().equals(responce.getWhsId()));
+				requestElasticityParameterSingleList.removeIf(e->e.getArtId().equals(response.getArtId()) && e.getWhsId().equals(response.getWhsId()));
 				
 			} catch (Exception e) {
 				LOG.error("Getting elasticity result exception: " + e.toString());
@@ -206,24 +207,24 @@ public class DataServiceImpl implements DataService {
 		
 		//Making complete response
 		for(RequestElasticityParameterSingle requestParameter : requestElasticityParameterSingleList){
-			ResponceElasticity responce = new ResponceElasticity(requestParameter.getWhsId(), requestParameter.getArtId());
-			responce.setErrorMessage("Couldn't calculate elasticity");
-			responceList.add(responce);
+			ResponseElasticity response = new ResponseElasticity(requestParameter.getWhsId(), requestParameter.getArtId());
+			response.setErrorMessage("Couldn't calculate elasticity");
+			responseList.add(response);
 		}
-		return responceList;
+		return responseList;
 	}
 	
 	
 	@Override
-	public List<ResponceForecastAndElasticity> getForecastAndElasticitytExcelMode(Integer requestId) throws DataServiceException {
-		List<ResponceForecastAndElasticity> responceList = new ArrayList<>();
+	public List<ResponseForecastAndElasticity> getForecastAndElasticitytExcelMode(Integer requestId) throws DataServiceException {
+		List<ResponseForecastAndElasticity> responseList = new ArrayList<>();
 		List<RequestForecastAndElasticityParameterSingle> requestForecastAndElasticityParameterSingleList = dataRepository.getRequestForecastAndElasticityParameterSingleList(requestId);
 		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
-		List<Future<ResponceForecastAndElasticity>> futureResponsetList = new ArrayList<Future<ResponceForecastAndElasticity>>();
+		List<Future<ResponseForecastAndElasticity>> futureResponsetList = new ArrayList<Future<ResponseForecastAndElasticity>>();
 		
 		for (int i = 0; i < requestForecastAndElasticityParameterSingleList.size(); i++) {
 			RequestForecastAndElasticityParameterSingle requestForecastAndElasticityParameter = requestForecastAndElasticityParameterSingleList.get(i);
-			Future<ResponceForecastAndElasticity> futureResponse = executorService.submit(() -> {
+			Future<ResponseForecastAndElasticity> futureResponse = executorService.submit(() -> {
 				return this.getForecastAndElasticitySingleDatabaseMode(requestForecastAndElasticityParameter);
 			});
 			futureResponsetList.add(futureResponse);
@@ -241,30 +242,30 @@ public class DataServiceImpl implements DataService {
 		}
 		
 		//Getting results from tasks
-		for (Future<ResponceForecastAndElasticity> futureResponse : futureResponsetList) {
-			ResponceForecastAndElasticity responce;
+		for (Future<ResponseForecastAndElasticity> futureResponse : futureResponsetList) {
+			ResponseForecastAndElasticity response;
 			try {
-				responce = futureResponse.get();
-				responceList.add(responce);
+				response = futureResponse.get();
+				responseList.add(response);
 				//Mark that request as completed
-				requestForecastAndElasticityParameterSingleList.removeIf(e->e.getRequestForecastParameter().getArtId().equals(responce.getResponceForecast().getArtId()) && e.getRequestForecastParameter().getWhsId().equals(responce.getResponceForecast().getWhsId()));
+				requestForecastAndElasticityParameterSingleList.removeIf(e->e.getRequestForecastParameter().getArtId().equals(response.getResponseForecast().getArtId()) && e.getRequestForecastParameter().getWhsId().equals(response.getResponseForecast().getWhsId()));
 			} catch (Exception e) {
 				LOG.error("Getting elasticity result exception: " + e.toString());
 			}
 		}
 		
-		return responceList;
+		return responseList;
 	}
 
 	@Override
-	public ResponceElasticity getElasticitySingleDatabaseMode(RequestElasticityParameterSingle elasticityParameter) {
-		ResponceElasticity elasticity;
+	public ResponseElasticity getElasticitySingleDatabaseMode(RequestElasticityParameterSingle elasticityParameter) {
+		ResponseElasticity elasticity;
 		
 		Integer requestId = elasticityParameter.getRequestId();
 		Integer whsId = elasticityParameter.getWhsId();
 		Integer artId = elasticityParameter.getArtId();
 		
-		elasticity = new ResponceElasticity(whsId, artId);
+		elasticity = new ResponseElasticity(whsId, artId);
 		
 		if (requestId == null) {
 			LOG.error("request_id can't be empty" + elasticityParameter.toString());
@@ -294,17 +295,57 @@ public class DataServiceImpl implements DataService {
 	}
 	
 	@Override
-	public ResponceForecastAndElasticity getForecastAndElasticitySingleDatabaseMode(RequestForecastAndElasticityParameterSingle forecastAndElasticityParameters) {
+	public List<ResponseForecastAndElasticity> getForecastAndElasticityMultipleDatabaseMode(RequestForecastAndElasticityParameterMultiple forecastAndElasticityParameterMultiple) throws DataServiceException {
+		String whsIdBulk = forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getWhsIdBulk();
+		String artIdBulk = forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple().getArtIdBulk();
+		
+		if (whsIdBulk == null || whsIdBulk.trim().equals("")) {
+			LOG.error("whs_id can't be empty" + forecastAndElasticityParameterMultiple.toString());
+			throw new DataServiceException("whs_id can't be empty");
+		}
+		if (artIdBulk == null || artIdBulk.trim().equals("")) {
+			LOG.error("art_id can't be empty" + forecastAndElasticityParameterMultiple.toString());
+			throw new DataServiceException("art_id can't be empty");
+		}
+		
+		whsIdBulk = whsIdBulk.trim();
+		artIdBulk = artIdBulk.trim();
+		
+		Pattern patternForCheck = Pattern.compile("^[0-9;]+");  
+        Matcher matcherForCheck = patternForCheck.matcher(whsIdBulk);  
+		
+		if(!matcherForCheck.matches()){
+			throw new DataServiceException("only (0-9 or ;) are allowed for whs_id");
+		}
+		
+        matcherForCheck = patternForCheck.matcher(artIdBulk);  
+		
+		if(!matcherForCheck.matches()){
+			throw new DataServiceException("only (0-9 or ;) are allowed for art_id");
+		}
+		
+		List<ResponseForecastAndElasticity> forecastAndElasticityList = null;
+		try {
+			SqlRowSet salesRowSet = dataRepository.getSalesMultipleWithPrices(forecastAndElasticityParameterMultiple.getRequestForecastParameterMultiple());
+			forecastAndElasticityList = dataRepository.getForecastAndElasticityMultiple(forecastAndElasticityParameterMultiple, salesRowSet);
+		} catch (Exception e) {
+			throw new DataServiceException(e.toString());
+		}
+		return forecastAndElasticityList;
+	}
+	
+	@Override
+	public ResponseForecastAndElasticity getForecastAndElasticitySingleDatabaseMode(RequestForecastAndElasticityParameterSingle forecastAndElasticityParameters) {
 		Integer requestId = forecastAndElasticityParameters.getRequestForecastParameter().getRequestId();
 		Integer whsId = forecastAndElasticityParameters.getRequestForecastParameter().getWhsId();
 		Integer artId = forecastAndElasticityParameters.getRequestForecastParameter().getArtId();
 		String trainingStart = forecastAndElasticityParameters.getRequestForecastParameter().getTrainingStart();
 		String trainingEnd = forecastAndElasticityParameters.getRequestForecastParameter().getTrainingEnd();
 		
-		ResponceElasticity elasticity = new ResponceElasticity(whsId, artId);
-		ResponceForecast forecast = new ResponceForecast(whsId, artId);
+		ResponseElasticity elasticity = new ResponseElasticity(whsId, artId);
+		ResponseForecast forecast = new ResponseForecast(whsId, artId);
 		
-		ResponceForecastAndElasticity result = new ResponceForecastAndElasticity(forecast, elasticity);
+		ResponseForecastAndElasticity result = new ResponseForecastAndElasticity(forecast, elasticity);
 		
 		if (requestId == null) {
 			LOG.error("request_id can't be empty" + forecastAndElasticityParameters.getRequestForecastParameter().toString());
@@ -354,16 +395,16 @@ public class DataServiceImpl implements DataService {
 	
 
 	@Override
-	public ResponceForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters){
+	public ResponseForecast getForecastSingleDatabaseMode(RequestForecastParameterSingle forecastParameters){
 		
-		ResponceForecast forecast;
+		ResponseForecast forecast;
 		
 		Integer requestId = forecastParameters.getRequestId();
 		Integer whsId = forecastParameters.getWhsId();
 		Integer artId = forecastParameters.getArtId();
 		String trainingStart = forecastParameters.getTrainingStart();
 		String trainingEnd = forecastParameters.getTrainingEnd();
-		forecast = new ResponceForecast(whsId, artId);
+		forecast = new ResponseForecast(whsId, artId);
 		
 		if (requestId == null) {
 			LOG.error("request_id can't be empty" + forecastParameters.toString());
@@ -412,14 +453,14 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public String createForecastResultFileSingleDatabaseMode(ResponceForecast responceForecast) throws DataServiceException  {
-		String result = dataRepository.createForecastResultFile(responceForecast);
+	public String createForecastResultFileSingleDatabaseMode(ResponseForecast responseForecast) throws DataServiceException  {
+		String result = dataRepository.createForecastResultFile(responseForecast);
 		return result;
 	}
 
 	@Override
-	public String createForecastResultFileMultipleDatabaseMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
-		String result = dataRepository.createForecastMultipleResultFile(responceForecastList);
+	public String createForecastResultFileMultipleDatabaseMode(List<ResponseForecast> responseForecastList) throws DataServiceException {
+		String result = dataRepository.createForecastMultipleResultFile(responseForecastList);
 		return result;
 	}
 	
@@ -533,15 +574,15 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public List<ResponceForecast> getForecastExcelMode(Integer requestId) throws DataServiceException {
-		List<ResponceForecast> responceList = new ArrayList<>();
+	public List<ResponseForecast> getForecastExcelMode(Integer requestId) throws DataServiceException {
+		List<ResponseForecast> responseList = new ArrayList<>();
 		List<RequestForecastParameterSingle> requestForecastParameterSingleList = dataRepository.getRequestForecastParameterSingleList(requestId);
 		ExecutorService executorService = Executors.newFixedThreadPool(countThreads);
-		List<Future<ResponceForecast>> futureResponsetList = new ArrayList<Future<ResponceForecast>>();
+		List<Future<ResponseForecast>> futureResponsetList = new ArrayList<Future<ResponseForecast>>();
 
 		for (int i = 0; i < requestForecastParameterSingleList.size(); i++) {
 			RequestForecastParameterSingle forecastParameter = requestForecastParameterSingleList.get(i);
-			Future<ResponceForecast> futureResponse = executorService.submit(() -> {
+			Future<ResponseForecast> futureResponse = executorService.submit(() -> {
 				return this.getForecastSingleDatabaseMode(forecastParameter);
 			});
 			futureResponsetList.add(futureResponse);
@@ -559,13 +600,13 @@ public class DataServiceImpl implements DataService {
 		}
 		
 		//Getting results from tasks
-		for (Future<ResponceForecast> futureResponse : futureResponsetList) {
-			ResponceForecast responce;
+		for (Future<ResponseForecast> futureResponse : futureResponsetList) {
+			ResponseForecast response;
 			try {
-				responce = futureResponse.get();
-				responceList.add(responce);
+				response = futureResponse.get();
+				responseList.add(response);
 				//Mark that request as completed
-				requestForecastParameterSingleList.removeIf(e->e.getArtId().equals(responce.getArtId()) && e.getWhsId().equals(responce.getWhsId()));
+				requestForecastParameterSingleList.removeIf(e->e.getArtId().equals(response.getArtId()) && e.getWhsId().equals(response.getWhsId()));
 				
 			} catch (Exception e) {
 				LOG.error("Getting forecast result exception: " + e.toString());
@@ -574,16 +615,16 @@ public class DataServiceImpl implements DataService {
 		
 		//Making complete response
 		for(RequestForecastParameterSingle requestParameter : requestForecastParameterSingleList){
-			ResponceForecast responce = new ResponceForecast(requestParameter.getWhsId(), requestParameter.getArtId());
-			responce.setErrorMessage("Couldn't make forecast");
-			responceList.add(responce);
+			ResponseForecast response = new ResponseForecast(requestParameter.getWhsId(), requestParameter.getArtId());
+			response.setErrorMessage("Couldn't make forecast");
+			responseList.add(response);
 		}
-		return responceList;
+		return responseList;
 	}
 
 	@Override
-	public String createForecastResultFileExcelMode(List<ResponceForecast> responceForecastList) throws DataServiceException {
-		String filePath = this.createForecastResultFileMultipleDatabaseMode(responceForecastList);
+	public String createForecastResultFileExcelMode(List<ResponseForecast> responseForecastList) throws DataServiceException {
+		String filePath = this.createForecastResultFileMultipleDatabaseMode(responseForecastList);
 		return filePath;
 	}
 
@@ -627,24 +668,30 @@ public class DataServiceImpl implements DataService {
 	}
 
 	@Override
-	public String createElasticityResultFileExcelMode(List<ResponceElasticity> elasticityResponseList) throws DataServiceException {
+	public String createElasticityResultFileExcelMode(List<ResponseElasticity> elasticityResponseList) throws DataServiceException {
 		String filePath = this.createElasticityResultFileMultipleDatabaseMode(elasticityResponseList);
 		return filePath;
 	}
 
-	public String createElasticityResultFileMultipleDatabaseMode(List<ResponceElasticity> elasticityResponseList) throws DataServiceException {
+	public String createElasticityResultFileMultipleDatabaseMode(List<ResponseElasticity> elasticityResponseList) throws DataServiceException {
 		String result = dataRepository.createElasticityMultipleResultFile(elasticityResponseList);
 		return result;
 	}
 
 	@Override
-	public String createForecastAndElasticityResultFileExcelMode(List<ResponceForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
+	public String createForecastAndElasticityResultFileExcelMode(List<ResponseForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
 		String filePath = this.getForecastWithElasticityFileMultipleDatabaseMode(forecastAndElasticityResponseList);
 		return filePath;
 	}
 
-	private String getForecastWithElasticityFileMultipleDatabaseMode(List<ResponceForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
+	private String getForecastWithElasticityFileMultipleDatabaseMode(List<ResponseForecastAndElasticity> forecastAndElasticityResponseList) throws DataServiceException {
 		String result = dataRepository.createForecastWithElasticityMultipleResultFile(forecastAndElasticityResponseList);
+		return result;
+	}
+
+	@Override
+	public String createForecastAndElasticityResultFileMultipleDatabaseMode(List<ResponseForecastAndElasticity> forecastAndElastisityResponse) throws DataServiceException {
+		String result = dataRepository.createForecastWithElasticityMultipleResultFile(forecastAndElastisityResponse);
 		return result;
 	}
 }

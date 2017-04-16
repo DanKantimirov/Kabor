@@ -27,10 +27,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.kabor.demand.prediction.email.EmailSender;
 import ru.kabor.demand.prediction.email.EmailSenderException;
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterMultiple;
+import ru.kabor.demand.prediction.entity.RequestForecastAndElasticityParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterMultiple;
 import ru.kabor.demand.prediction.entity.RequestForecastParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
-import ru.kabor.demand.prediction.entity.ResponceForecast;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
+import ru.kabor.demand.prediction.entity.ResponseForecast;
+import ru.kabor.demand.prediction.entity.ResponseForecastAndElasticity;
 import ru.kabor.demand.prediction.service.DataService;
 import ru.kabor.demand.prediction.service.DataServiceException;
 
@@ -56,7 +58,7 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
 			HttpServletRequest request,
 			HttpServletResponse response,
     		RedirectAttributes redirectAttributes) {
-		ResponceForecast forecastResponse;
+		ResponseForecast forecastResponse;
 		try {
 			forecastResponse = dataService.getForecastSingleDatabaseMode(forecastParameterSingle);
 			String filePath = dataService.createForecastResultFileSingleDatabaseMode(forecastResponse);
@@ -76,7 +78,7 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
 			HttpServletResponse response,
     		RedirectAttributes redirectAttributes){
 		try {
-			List<ResponceForecast> forecastResponse = dataService.getForecastMultipleDatabaseMode(forecastParameterMultiple);
+			List<ResponseForecast> forecastResponse = dataService.getForecastMultipleDatabaseMode(forecastParameterMultiple);
 			String filePath = dataService.createForecastResultFileMultipleDatabaseMode(forecastResponse);
 			LOG.info("created: " + filePath);
 			return filePath;
@@ -94,12 +96,37 @@ public class DatabaseModeControllerImpl implements DatabaseModeController {
 			HttpServletResponse response,
     		RedirectAttributes redirectAttributes){
 		try {
-			List<ResponceElasticity> elasticityResponse = dataService.getElasticityMultipleDatabaseMode(elasticityParameterMultiple);
+			List<ResponseElasticity> elasticityResponse = dataService.getElasticityMultipleDatabaseMode(elasticityParameterMultiple);
 			String filePath = dataService.createElasticityResultFileMultipleDatabaseMode(elasticityResponse);
 			LOG.info("created: " + filePath);
 			if (elasticityParameterMultiple.getIsSendByEmail().equals(true)) {
 				try {
 					emailSender.sendMessageWithElasticityResult(Long.valueOf(elasticityParameterMultiple.getRequestId()), elasticityParameterMultiple.getEmail(), filePath);
+				} catch (MessagingException | EmailSenderException e) {
+					LOG.error("ERROR can't send email: " + e.toString());
+				}
+			}
+			return filePath;
+		} catch (DataServiceException e) {
+			LOG.error(e.toString());
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return e.toString();
+		}
+	}
+	
+	@Override
+	@RequestMapping(value = "/forecastandelasticitymultiple",consumes=MediaType.APPLICATION_JSON_VALUE )
+	public String getForecastAndElasticityMultiple(@RequestBody RequestForecastAndElasticityParameterMultiple forecastAndElasticityParameterMultiple, 
+			HttpServletRequest request,
+			HttpServletResponse response, 
+			RedirectAttributes redirectAttributes) {
+		try {
+			List<ResponseForecastAndElasticity> forecastAndElastisityResponse = dataService.getForecastAndElasticityMultipleDatabaseMode(forecastAndElasticityParameterMultiple);
+			String filePath = dataService.createForecastAndElasticityResultFileMultipleDatabaseMode(forecastAndElastisityResponse);
+			LOG.info("created: " + filePath);
+			if (forecastAndElasticityParameterMultiple.getRequestElasticityParameterMultiple().getIsSendByEmail().equals(true)) {
+				try {
+					emailSender.sendMessageWithElasticityResult(Long.valueOf(forecastAndElasticityParameterMultiple.getRequestElasticityParameterMultiple().getRequestId()), forecastAndElasticityParameterMultiple.getRequestElasticityParameterMultiple().getEmail(), filePath);
 				} catch (MessagingException | EmailSenderException e) {
 					LOG.error("ERROR can't send email: " + e.toString());
 				}

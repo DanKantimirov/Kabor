@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 public class WhsArtTimeline {
 	private Integer whsId;
 	private Integer artId;
-	private List<TimeMomentDescription> timeMoments = new ArrayList<>();		//all periods of time
+	/** all periods of time*/
+	private List<TimeMomentDescription> timeMoments = new ArrayList<>();
 
 	public WhsArtTimeline() {
 		super();
@@ -44,6 +45,9 @@ public class WhsArtTimeline {
 		return "WhsArtTimeline [whsId=" + whsId + ", artId=" + artId + ", timeMoments=" + timeMoments + "]";
 	}
 	
+	/** Get rests actual values separated by comma sorted by time moments
+	 * @return rests actual values separated by comma sorted by time moments
+	 */
 	public String getRestsSortedByDate(){
 		
 		Collections.sort(timeMoments, new Comparator<TimeMomentDescription>() {
@@ -57,6 +61,9 @@ public class WhsArtTimeline {
 		
 	}
 	
+	/** Get sales actual values separated by comma sorted by time moments
+	 * @return sales actual values separated by comma sorted by time moments
+	 */
 	public String getSalesActualSortedByDate(){
 		
 		Collections.sort(timeMoments, new Comparator<TimeMomentDescription>() {
@@ -69,6 +76,9 @@ public class WhsArtTimeline {
 		return moments;
 	}
 	
+	/** Get sales smoothed values separated by comma sorted by time moments
+	 * @return sales smoothed values separated by comma sorted by time moments
+	 */
 	public String getSalesSmootedSortedByDate(){
 		
 		Collections.sort(timeMoments, new Comparator<TimeMomentDescription>() {
@@ -82,6 +92,9 @@ public class WhsArtTimeline {
 	}
 	
 	
+	/** Get price values separated by comma sorted by time moments
+	 * @return price values separated by comma sorted by time moments
+	 */
 	public String getPricesSortedByDate(){
 		
 		Collections.sort(timeMoments, new Comparator<TimeMomentDescription>() {

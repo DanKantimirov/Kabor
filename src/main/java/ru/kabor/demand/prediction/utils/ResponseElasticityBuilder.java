@@ -1,15 +1,24 @@
 package ru.kabor.demand.prediction.utils;
 
 import ru.kabor.demand.prediction.entity.RequestElasticityParameterSingle;
-import ru.kabor.demand.prediction.entity.ResponceElasticity;
+import ru.kabor.demand.prediction.entity.ResponseElasticity;
 import ru.kabor.demand.prediction.entity.WhsArtTimeline;
 
 /** It builds result of calculating elasticity */
-public class ResponceElasticityBuilder {
+public class ResponseElasticityBuilder {
 
-	public static ResponceElasticity buildSuccessResponseElasticity(RequestElasticityParameterSingle elasticityParameter, WhsArtTimeline whsArtTimeline, String bestModelFormula,
+	/** Build success response
+	 * @param elasticityParameter
+	 * @param whsArtTimeline
+	 * @param bestModelFormula
+	 * @param bestModelCoeff
+	 * @param bestModelError
+	 * @param isResultWithTimeMoments
+	 * @return
+	 */
+	public static ResponseElasticity buildSuccessResponseElasticity(RequestElasticityParameterSingle elasticityParameter, WhsArtTimeline whsArtTimeline, String bestModelFormula,
 			double[] bestModelCoeff, Double bestModelError, Boolean isResultWithTimeMoments) {
-		ResponceElasticity result = new ResponceElasticity();
+		ResponseElasticity result = new ResponseElasticity();
 		if (isResultWithTimeMoments) {
 			result.setTimeMoments(whsArtTimeline.getTimeMoments());
 		}
@@ -21,8 +30,14 @@ public class ResponceElasticityBuilder {
 		return result;
 	}
 
-	public static ResponceElasticity buildErrorResponseElasticity(RequestElasticityParameterSingle elasticityParameter, WhsArtTimeline whsArtTimeline, String errorMessage) {
-		ResponceElasticity result = new ResponceElasticity();
+	/** Build result with error
+	 * @param elasticityParameter
+	 * @param whsArtTimeline
+	 * @param errorMessage
+	 * @return
+	 */
+	public static ResponseElasticity buildErrorResponseElasticity(RequestElasticityParameterSingle elasticityParameter, WhsArtTimeline whsArtTimeline, String errorMessage) {
+		ResponseElasticity result = new ResponseElasticity();
 		result.setTimeMoments(whsArtTimeline.getTimeMoments());
 		result.setWhsId(elasticityParameter.getWhsId());
 		result.setArtId(elasticityParameter.getArtId());
