@@ -419,14 +419,14 @@ public class DataRepositoryImpl implements DataRepository{
 				try {
 					out.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e.toString());
 				}
 			}
 			if (book != null) {
 				try {
 					book.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e.toString());
 				}
 			}
 		}
@@ -846,14 +846,14 @@ public class DataRepositoryImpl implements DataRepository{
 				try {
 					out.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e.toString());
 				}
 			}
 			if (book != null) {
 				try {
 					book.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e.toString());
 				}
 			}
 		}
@@ -1065,14 +1065,14 @@ public class DataRepositoryImpl implements DataRepository{
 				try {
 					out.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e.toString());
 				}
 			}
 			if (book != null) {
 				try {
 					book.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.error(e.toString());
 				}
 			}
 		}
